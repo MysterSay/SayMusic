@@ -2,7 +2,6 @@
 /[Ee][Xx][Ee]/
 *.exe
 /dist/
-/build/
 
 # Dependencies and editor files
 node_modules/
@@ -25,3 +24,7 @@ google-auth.dat
 spotify.dat
 storage-path.txt
 /AccountWebView/
+
+# Published Windows build
+!/build/*.exe
+!/build/tools/*.exe

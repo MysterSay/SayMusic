@@ -93,7 +93,7 @@ func (a *App) bridge(w http.ResponseWriter, r *http.Request) {
 			reply(map[string]any{"ok": true, "running": true, "existing": found})
 		}
 	case "status":
-		reply(map[string]any{"ok": true, "running": true, "authenticated": a.config().Cookies, "spotifyConnected": a.config().SpotifyConnected, "version": "1.5.33", "language": a.config().Language})
+		reply(map[string]any{"ok": true, "running": true, "authenticated": a.config().Cookies, "spotifyConnected": a.config().SpotifyConnected, "version": "1.5.35", "language": a.config().Language})
 	case "open":
 		focusMusicWindow()
 		reply(map[string]any{"ok": true, "message": "Say Music запущено"})

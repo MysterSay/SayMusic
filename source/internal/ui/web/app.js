@@ -1580,6 +1580,7 @@ $("retryPair").onclick = safely(async () => {
   await api("pair/retry", {});
   await refreshPairUI();
 });
+
 setInterval(async () => {
   if (setupPolling || (!$("settings").open && !$("extensionWizard").open))
     return;

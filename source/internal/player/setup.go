@@ -32,9 +32,9 @@ func bridgeManifest(helper string) []byte {
 	return b
 }
 func (a *App) installBrowserBridge() error {
-	helper := filepath.Join(installRoot(), "SayMusicBridge.exe")
+	helper := filepath.Join(installRoot(), "SayMusic.exe")
 	if stat, e := os.Stat(helper); e != nil || stat.IsDir() {
-		return errors.New("Поруч із SayMusic.exe немає SayMusicBridge.exe. Розпакуй весь архів програми в одну папку")
+		return errors.New("Не знайдено SayMusic.exe")
 	}
 	path := filepath.Join(a.dir, "com.saymusic.desktop.json")
 	if e := atomicWrite(path, bridgeManifest(helper)); e != nil {

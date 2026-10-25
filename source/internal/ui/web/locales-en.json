@@ -511,5 +511,9 @@
   "Програму підключено • YouTube ": "App connected • YouTube ",
   "Сесію скопійовано. Протягом 10 хвилин: Say Music → Налаштування → Вставити сесію. Після вставлення зв’язок працюватиме автоматично.": "Session copied. Within 10 minutes: Say Music → Settings → Account → Paste session. The connection will then work automatically.",
   "Очікує вставлення сесії в Say Music": "Waiting for the session to be pasted in Say Music",
-  "Сесію Spotify скопійовано. Say Music → Налаштування → Акаунт → Вставити сесію.": "Spotify session copied. Say Music → Settings → Account → Paste session."
+  "Сесію Spotify скопійовано. Say Music → Налаштування → Акаунт → Вставити сесію.": "Spotify session copied. Say Music → Settings → Account → Paste session.",
+  "Завантажити міст": "Download bridge",
+  "Для зв’язку розширення з плеєром.": "Connects the browser extension to the player.",
+  "Завантаження мосту…": "Downloading bridge…",
+  "Міст завантажено": "Bridge downloaded"
 }
