@@ -1,0 +1,27 @@
+# Local executables and build output
+/[Ee][Xx][Ee]/
+*.exe
+/dist/
+/build/
+
+# Dependencies and editor files
+node_modules/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local settings, sessions and database
+.env
+.env.*
+!.env.example
+*.log
+*.dmp
+*.db
+*.db-shm
+*.db-wal
+cookies.txt
+google-auth.dat
+spotify.dat
+storage-path.txt
+/AccountWebView/

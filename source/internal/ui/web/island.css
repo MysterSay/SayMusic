@@ -1,0 +1,561 @@
+:root {
+  color-scheme: dark;
+  --radius: 24px;
+  --cover: 240px;
+  --bg: rgba(26, 27, 30, 0.82);
+  --fg: #f6f6fa;
+  --muted: #bbbbc3;
+  --border: rgba(255, 255, 255, 0.18);
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  font:
+    12px "Segoe UI",
+    sans-serif;
+  color: var(--fg);
+}
+#island {
+  height: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  padding: 10px;
+  overflow: hidden;
+  transition:
+    background 0.25s,
+    border-radius 0.25s;
+}
+header {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  margin-bottom: 7px;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 10px;
+}
+header span {
+  flex: 1;
+}
+button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  padding: 3px 7px;
+}
+button:hover {
+  background: rgba(150, 150, 150, 0.18);
+}
+button:active {
+  transform: scale(0.92);
+}
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#art {
+  width: 100%;
+  height: var(--cover);
+  object-fit: cover;
+  border-radius: max(4px, calc(var(--radius) - 7px));
+}
+#info {
+  border: 1px solid var(--border);
+  border-radius: max(8px, calc(var(--radius) - 5px));
+  background: rgba(130, 130, 130, 0.08);
+  padding: 9px 12px;
+}
+#title,
+#artist {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#title {
+  font-size: 12px;
+  font-weight: 650;
+  margin-bottom: 4px;
+}
+#artist {
+  font-size: 10px;
+  color: var(--muted);
+}
+input {
+  width: 100%;
+  height: 3px;
+  margin: 10px 0 5px;
+  accent-color: var(--fg);
+  cursor: pointer;
+}
+#times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--muted);
+}
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.controls button {
+  font-size: 20px;
+  line-height: 22px;
+  padding: 3px 8px;
+}
+.light {
+  color-scheme: light;
+  --fg: #14151a;
+  --muted: #5f6169;
+  --border: rgba(0, 0, 0, 0.2);
+}
+.compact .content {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.compact #art {
+  width: 90px;
+  height: 96px;
+  flex-shrink: 0;
+}
+.compact #info {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  min-width: 0;
+  flex: 1;
+}
+.compact .controls {
+  gap: 3px;
+}
+.collapsed header,
+.collapsed #seek,
+.collapsed #times,
+.collapsed .controls {
+  display: none;
+}
+.collapsed .content {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.collapsed #art {
+  width: 52px;
+  height: 52px;
+}
+.collapsed #info {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-width: 0;
+  flex: 1;
+}
+.borderless #island {
+  border-color: transparent;
+}
+.no-motion * {
+  transition: none !important;
+  animation: none !important;
+}
+#error {
+  position: absolute;
+  inset: 0;
+  padding: 8px;
+  background: var(--bg);
+  font-size: 10px;
+  overflow: auto;
+}
+
+/* Stable artwork box lets track changes crossfade without changing layout. */
+.artwork {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  height: var(--cover);
+  overflow: hidden;
+  border-radius: max(4px, calc(var(--radius) - 7px));
+}
+.artwork #art,
+.artwork #artPrevious {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+#artPrevious {
+  opacity: 0;
+  pointer-events: none;
+}
+.compact .artwork {
+  width: 90px;
+  height: 96px;
+}
+#capsuleToggle {
+  display: none;
+}
+.collapsed #island {
+  padding: 4px 7px;
+  border-radius: 22px;
+}
+.collapsed .content {
+  height: 100%;
+  gap: 7px;
+}
+.collapsed .artwork {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+.collapsed #info {
+  min-width: 0;
+  flex: 1;
+}
+.collapsed #title {
+  font-size: 10px;
+  margin-bottom: 1px;
+}
+.collapsed #artist {
+  font-size: 9px;
+}
+.collapsed #capsuleToggle {
+  display: block;
+  flex: none;
+  font-size: 16px;
+  padding: 4px;
+}
+body:not(.collapsed) #info {
+  animation: reveal 0.3s ease-out;
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Materials share a fixed alpha surface; only the separate native backdrop blurs. */
+#island {
+  position: relative;
+  isolation: isolate;
+  transform-origin: 50% 100%;
+}
+#ambient,
+#customBackground {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+  pointer-events: none;
+}
+#ambient {
+  inset: -20%;
+  width: 140%;
+  height: 140%;
+  filter: blur(28px);
+  opacity: var(--tint, 0.2);
+}
+#island::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url(noise.png) repeat;
+  opacity: 0;
+}
+.solid #island {
+  background: var(--solid, #18191d);
+}
+.mica #island {
+  background:
+    linear-gradient(135deg, rgba(110, 115, 145, 0.24), transparent 60%),
+    var(--bg);
+}
+.mica #island::before {
+  opacity: 0.32;
+}
+.acrylic #island {
+  background: rgba(var(--interface-rgb, 25, 27, 35), 0.78);
+}
+.acrylic #island::before {
+  opacity: 0.045;
+}
+.glass #island {
+  background: rgba(var(--surface-rgb, 24, 25, 29), 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.borderless #island {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.transparent #ambient {
+  display: block;
+  opacity: calc(var(--tint, 0.2) + 0.15);
+}
+.custom #island {
+  background: var(--solid, #18191d);
+}
+.custom #customBackground {
+  display: block;
+  opacity: 0.85;
+}
+.custom #info {
+  background: rgba(var(--surface-rgb, 24, 25, 29), 0.78);
+}
+.collapsed #island {
+  background: var(--bg);
+}
+.collapsed #ambient,
+.collapsed #customBackground,
+.collapsed #island::before {
+  display: none;
+}
+
+/* The fixed tray capsule and sliding navigation are independent surfaces. */
+body.capsule #island {
+  padding: 0;
+  border: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 22px;
+}
+body.capsule #island::before,
+body.capsule #customBackground {
+  display: none !important;
+}
+body.capsule .content {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.capsule-base {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  z-index: 1;
+  flex: 0 0 220px;
+  width: 220px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 8px;
+  border-radius: 22px;
+  background: rgba(var(--interface-rgb, 25, 27, 35), 0.78);
+  border: 1px solid var(--border);
+}
+body.capsule .capsule-base .artwork {
+  order: 0;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 9px;
+}
+body.capsule .capsule-base #info {
+  order: 1;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+body.capsule #title {
+  font-size: 10px;
+  margin-bottom: 1px;
+}
+body.capsule #artist {
+  font-size: 9px;
+}
+body.capsule.borderless .capsule-base {
+  background: transparent;
+  border-color: transparent;
+}
+body.capsule.transparent .capsule-base {
+  background: var(--bg);
+}
+body.capsule.transparent .capsule-base #ambient {
+  display: block;
+}
+body.capsule .capsule-base #ambient {
+  z-index: -1;
+}
+body.capsule.side-expanded .controls {
+  flex: 1;
+  min-width: 72px;
+  height: 100%;
+  position: relative;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0 4px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  animation: slide-controls 0.2s ease-out;
+}
+body.capsule.side-expanded .controls button {
+  font-size: 14px;
+  padding: 2px 3px;
+}
+body.capsule.side-expanded.glass .controls {
+  background: rgba(var(--surface-rgb, 24, 25, 29), 0.12);
+}
+body.capsule.side-expanded.acrylic .controls {
+  background: rgba(var(--interface-rgb, 25, 27, 35), 0.78);
+}
+body.capsule.side-expanded.solid .controls {
+  background: var(--solid, #18191d);
+}
+body.capsule.side-expanded.borderless .controls {
+  background: transparent;
+  border-color: transparent;
+}
+body.capsule.side-expanded.mica .controls {
+  background-image:
+    linear-gradient(rgba(25, 27, 35, 0.65), rgba(25, 27, 35, 0.65)),
+    url(noise.png);
+}
+@keyframes slide-controls {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+body.capsule.side-expanded.custom .controls {
+  background-image: var(--nav-custom);
+  background-size: cover;
+  background-position: center;
+}
+body.capsule.side-expanded.transparent .controls {
+  isolation: isolate;
+  overflow: hidden;
+}
+body.capsule.side-expanded.transparent .controls::before {
+  content: "";
+  position: absolute;
+  inset: -15px;
+  z-index: -1;
+  background-image: var(--nav-art);
+  background-size: cover;
+  background-position: center;
+  filter: blur(12px);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.capsule-base::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: url(noise.png) repeat;
+  opacity: 0.04;
+}
+body.capsule.borderless .capsule-base::before,
+body.capsule.transparent .capsule-base::before {
+  display: none;
+}
+body.capsule.side-expanded .controls button {
+  width: 22px;
+  flex: 0 0 22px;
+  padding: 0;
+}
+
+/* The front capsule is anchored; navigation emerges from beneath its left edge. */
+body.capsule .content {
+  position: relative;
+  display: block;
+}
+body.capsule .capsule-base {
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 2;
+}
+body.capsule.side-expanded .controls {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 200px;
+  width: auto;
+  min-width: 0;
+  height: 100%;
+  z-index: 1;
+  box-sizing: border-box;
+  padding: 0 24px 0 4px;
+  justify-content: center;
+  overflow: hidden;
+}
+@keyframes slide-controls {
+  from {
+    transform: translateX(calc(100% - 20px));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+body.capsule.borderless .capsule-base,
+body.capsule.side-expanded.borderless .controls {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+}
+
+body.capsule .capsule-base .artwork {
+  width: min(30px, calc(100vh - 10px));
+  height: min(30px, calc(100vh - 10px));
+}
+
+/* Both surfaces occupy the same vertical interval; no inherited toolbar margin. */
+body.capsule.side-expanded .controls {top:0;bottom:0;height:100%;margin:0;border-radius:22px;display:flex;align-items:center;}
+.controls svg {display:block;width:20px;height:20px;pointer-events:none;}
+.controls button {display:grid;place-items:center;}
+body.capsule.side-expanded .controls button {display:grid;place-items:center;height:28px;line-height:1;margin:0;padding:0;align-self:center;}
+body.capsule.side-expanded .controls svg {width:16px;height:16px;}
+
+#favorite.active { color: #ff729c; }
+
+body.compact:not(.capsule) .controls { gap: 2px; }
+body.compact:not(.capsule) .controls button { width: 22px; min-width: 22px; padding: 3px 0; }

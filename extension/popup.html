@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <title>Say Music</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="icon128.png" alt="" />
+      <div>
+        <h1>Say Music</h1>
+        <small>YouTube Music · Spotify → твоя бібліотека</small>
+      </div>
+    </header>
+    <p id="state">Перевірка підключення…</p>
+    <button id="copySession">Копіювати сесію YouTube</button>
+    <button id="copySpotifySession">Копіювати сесію Spotify</button>
+    <button id="add">＋ Додати трек/плейлист із вкладки</button
+    ><button id="auth">Підключити YouTube-акаунт</button
+    ><button id="authSpotify">Підключити Spotify</button
+    ><button id="open">Відкрити Say Music</button>
+    <p id="message" role="status"></p>
+    <p class="hint">Доступ до cookies запитується лише для підключення акаунта та відкликається після дії. Додавання пісень не потребує цього дозволу.</p>
+    <p class="hint">
+      Один раз: скопіюй сесію тут → Say Music → Налаштування → Акаунт → Вставити сесію. Це підключить акаунт і локальний зв’язок без реєстрації мосту. Пакет містить дані входу: не надсилай його іншим.
+    </p>
+    <p class="hint">
+      Вхід у Google виконується у звичайному браузері. Сесія YouTube передається
+      програмі лише після натискання «Підключити».
+    </p>
+    <p class="hint">Скопіюй сесію Spotify тут та встав у Say Music → Налаштування → Акаунт. Розширення передає посилання, а весь список отримує плеєр. Вкладку можна закрити.</p>
+    <script src="i18n.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

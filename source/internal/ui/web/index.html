@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Say Music</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+</head>
+  <body>
+    <aside>
+      <div class="brand">
+        <span class="logo" role="img" aria-label="Say Music"></span>
+        <div>Say Music<span>MUSIC PLAYER</span></div>
+      </div>
+      <button class="nav active" id="home">◈ &nbsp; Моя музика</button
+      ><button class="nav" id="favoritesNav">♥ &nbsp; Уподобані</button
+      ><button class="nav" id="playlistsNav">▤ &nbsp; Плейлисти</button
+      ><button class="nav" id="liked">♡ &nbsp; Уподобані YouTube</button
+      ><button class="nav" id="spotifyLiked">♡ &nbsp; Уподобані Spotify</button
+      ><button class="nav" id="offlineNav">↓ &nbsp; Офлайн-треки</button
+      ><button class="nav" id="queueNav">☷ &nbsp; Черга відтворення</button>
+      <button class="nav" id="artistsNav">♬ &nbsp; Виконавці</button
+      ><button class="nav" id="recommendationsNav" hidden>
+        ✦ &nbsp; Нові й старі улюблені
+      </button>
+      <button class="nav" id="newPlaylist" title="Створити плейлист">＋ &nbsp; Новий плейлист</button>
+      <div class="sidebottom">
+        <button class="nav" id="settingsBtn">⚙ &nbsp; Налаштування</button
+        ><button class="nav muted" id="exit">Вийти з програми</button
+        ><small>Твоя музика. Твій простір.</small>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <form id="searchForm">
+          <span>⌕</span
+          ><input
+            id="query"
+            placeholder="Знайти трек або вставити посилання YouTube…"
+            autocomplete="off"
+          /><button class="primary">Знайти</button>
+        </form>
+        <button id="importBtn">＋ Імпорт</button
+        ><button id="refresh" title="Оновити поточний список">↻</button>
+      </header>
+      <section class="hero">
+        <div>
+          <div class="eyebrow">YOUR EVERYDAY SOUNDTRACK</div>
+          <h1 id="viewTitle">Моя музика</h1>
+          <p id="subtitle">Улюблені звуки завжди поруч</p>
+          <div class="actions">
+            <button class="primary" id="playAll">▶ Відтворити все</button
+            ><button id="shuffleAll">⤨ Перемішати</button
+            ><button id="renamePlaylist" hidden>Перейменувати</button
+            ><button id="deletePlaylist" hidden>Видалити плейлист</button>
+          </div>
+        </div>
+        <div class="vinyl"><div>♪</div></div>
+      </section>
+      <div class="listhead">
+        <div>
+          <h2 id="listTitle">Твоя бібліотека</h2>
+          <span id="count">0 треків</span>
+        </div>
+        <input id="filter" placeholder="Фільтр у списку…" /><button id="addAll">
+          ＋ У плейлист</button
+        ><button id="cacheAll">↓ Зберегти офлайн</button>
+      </div>
+      <div id="notice" hidden></div>
+      <button id="cancelSpotifySync" hidden>Зупинити синхронізацію Spotify</button>
+      <div id="playlists" class="playlist-grid" hidden></div>
+      <div id="artistGrid" class="artist-grid" hidden></div>
+      <div id="tracks"></div>
+      <div id="empty" hidden>
+        <div>♫</div>
+        <h2>Додай свій перший трек</h2>
+        <p>Введи назву в пошуку або імпортуй посилання на плейлист.</p>
+      </div>
+    </main>
+    <footer>
+      <div id="now">
+        <img id="nowArt" alt="" hidden />
+        <div>
+          <strong id="nowTitle">Обери свій настрій</strong
+          ><span id="nowArtist">Додай музику та натисни відтворення</span>
+        </div>
+      </div>
+      <div class="transport">
+        <div class="controls">
+          <button id="shuffle" title="Випадковий порядок">⤨</button
+          ><button id="prev" title="Попередній">⏮</button
+          ><button class="play" id="toggle" title="Відтворення / пауза">
+            ▶</button
+          ><button id="next" title="Наступний">⏭</button
+          ><button id="repeat" title="Повтор: вимкнено">↻</button>
+        </div>
+        <div class="timeline">
+          <span id="elapsed">0:00</span
+          ><input type="range" id="seek" min="0" max="100" value="0" /><span
+            id="duration"
+            >0:00</span
+          >
+        </div>
+      </div>
+      <div class="volume">
+        <button id="favoriteNow" class="favorite-button" title="Додати до уподобаних" aria-pressed="false" disabled>♡</button>
+        <button id="radioNow" title="Радіо за поточним треком">◉</button
+        ><span>♫</span
+        ><input
+          id="volume"
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value="0.7"
+        />
+      </div>
+      <audio id="audio" preload="none"></audio>
+    </footer>
+    <dialog id="settings" class="settings-dialog">
+      <form method="dialog">
+        <div class="dialoghead">
+          <h2>Налаштування</h2>
+          <button>✕</button>
+        </div>
+      </form>
+      <nav class="settings-tabs" aria-label="Розділи налаштувань">
+        <button type="button" data-settings="main">Головна</button>
+        <button type="button" data-settings="appearance">Вигляд</button>
+        <button type="button" data-settings="island">Медіаострівець</button>
+        <button type="button" data-settings="account">Акаунти</button>
+        <button type="button" data-settings="advanced">Додатково</button>
+
+        <button type="button" id="saveRecommendations" class="primary settings-save" data-save-page="main" hidden>Зберегти</button>
+        <button type="button" id="saveAppearance" class="primary settings-save" data-save-page="appearance" hidden>Зберегти</button>
+        <button type="button" id="saveIsland" class="primary settings-save" data-save-page="island" hidden>Зберегти</button>
+        <button type="button" id="saveCache" class="primary settings-save" data-save-page="advanced" hidden>Зберегти</button>
+      </nav>
+      <section data-settings-page="main">
+<label>Мова / Language<select id="language"><option value="uk">Українська</option><option value="en">English</option></select></label><h3>Відтворення</h3>
+        <label class="check"><input id="earlyBuffering" type="checkbox" checked />Рання буферизація</label>
+        <p class="hint">Завантажувати наступний трек одразу після початку відтворення поточного.</p>
+        <h3>Рекомендації</h3>
+        <label class="check"
+          ><input id="recommendationsEnabled" type="checkbox" />Нові й старі
+          улюблені пісні</label
+        >
+        <p>
+          Добірка поєднує знайомі пісні з бібліотеки та схожі треки. Історія
+          прослуховувань зберігається локально. Коли черга закінчується,
+          рекомендації можуть продовжити відтворення; режим повтору має
+          пріоритет.
+        </p>
+        <button id="openRecommendations">Відкрити добірку</button>
+        <p class="hint">
+          Це добірка Say Music, а не точна копія однойменної полиці YouTube
+          Music. Офлайн використовуються тільки наявні аудіофайли.
+        </p>
+            </section>
+      <section data-settings-page="appearance" hidden>
+        <h3>Вигляд програми</h3>
+        <div class="settings-grid">
+          <label>Основний колір інтерфейсу<input id="interfaceColor" type="color" value="#191b23" /></label>
+          <label>Додатковий колір інтерфейсу<input id="interfaceAccent" type="color" value="#ae96ff" /></label>
+          <label>Тема інтерфейсу<select id="interfaceTheme">
+            <option value="dark">Темна</option>
+            <option value="light">Світла</option>
+            <option value="system">Як у Windows</option>
+          </select></label>
+        </div>
+        <div class="actions">
+          
+          <button id="resetAppearance">Стандартний вигляд</button>
+        </div>
+        <p id="appearanceStatus" role="status"></p>
+      </section>
+      <section data-settings-page="island" hidden>
+        <h3>Медіаострівець</h3>
+        <p>
+          Окремий мініплеєр у стилі Island Media Controls. Після згортання у
+          трей музика продовжує грати. Лівий клік по значку повертає програму,
+          правий — відкриває меню.
+        </p>
+        <label class="check"
+          ><input id="islandEnabled" type="checkbox" />Показувати медіаострівець
+          при згортанні</label
+        >
+        <label class="check"
+          ><input id="closeToTray" type="checkbox" />Хрестик вікна згортає у
+          трей</label
+        >
+        <label class="check"><input id="islandEdgeFree" type="checkbox">Вільне розташування на краю екрану</label>
+        <p class="hint">Наведи курсор на смужку, щоб розкрити острівець. Затисни та перетягни смужку до потрібного краю екрана.</p>
+        <label class="check"><input id="islandEdgeStandard" type="checkbox" checked>Стандартний колір</label>
+        <div class="settings-grid">
+ <label>Довжина смужки, px<input id="islandEdgeLength" type="number" min="30" max="400" value="90"></label>
+ <label>Товщина смужки, px<input id="islandEdgeThickness" type="number" min="2" max="32" value="10"></label>
+ </div>
+ <label class="check"><input id="islandEdgeReaction" type="checkbox" checked>Реакція віджета</label>
+ <label>Радіус реакції, px<input id="islandEdgeReactionRadius" type="number" min="20" max="600" value="150"></label>
+ <p class="hint">При наближенні курсора з’являється назва треку. Наведи на смужку, щоб відкрити керування. Відступ від краю — 4 px.</p>
+ <label>Колір смужки<input id="islandEdgeColor" type="color" value="#ae96ff"></label>
+        <div class="settings-grid">
+          <label
+            >Режим<select id="islandLayout">
+              <option value="full">Повний — велика обкладинка</option>
+              <option value="compact">Компактний</option>
+              <option value="side">Бічний</option>
+            </select></label
+          >
+          <label
+            >Тема<select id="islandTheme">
+              <option value="dark">Темна</option>
+              <option value="light">Світла</option>
+            </select></label
+          >
+          <label
+            >Матеріал<select id="islandMaterial">
+              <option value="solid">Суцільний</option>
+              <option value="mica">Mica — зернистий</option>
+              <option value="acrylic">Акрил</option>
+              <option value="glass">Скло — прозорість і блюр</option>
+              <option value="transparent">Тонований</option>
+              <option value="borderless">Без рамки — прозорий</option>
+              <option value="custom">Свій фон</option>
+            </select></label
+          >
+          <label
+            >Колір суцільного фону<input
+              id="islandBackgroundColor"
+              type="color"
+              value="#18191d"
+          /></label>
+          <label
+            >Власна картинка<input
+              id="islandBackgroundFile"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+          /></label>
+          <button id="islandClearBackground" type="button">
+            Видалити власний фон
+          </button>
+          <p id="islandBackgroundStatus" class="hint"></p>
+          <label
+            >Розташування<select id="islandPosition">
+              <option value="bottom-right">Праворуч унизу</option>
+              <option value="bottom-left">Ліворуч унизу</option>
+              <option value="bottom-center">По центру внизу</option>
+              <option value="top-right">Праворуч угорі</option>
+              <option value="top-left">Ліворуч угорі</option>
+            </select></label
+          >
+          <label
+            >Ширина, px<input
+              id="islandWidth"
+              type="number"
+              min="240"
+              max="560" /></label
+          ><label
+            >Висота обкладинки, px<input
+              id="islandCover"
+              type="number"
+              min="64"
+              max="420"
+          /></label>
+          <label
+            >Заокруглення<input
+              id="islandRadius"
+              type="number"
+              min="0"
+              max="48" /></label
+          ><label
+            >Щільність фону, %<input
+              id="islandOpacity"
+              type="number"
+              min="40"
+              max="100"
+          /></label>
+          <label
+            >Відступ по горизонталі<input
+              id="islandOffsetX"
+              type="number"
+              min="0"
+              max="2000" /></label
+          ><label
+            >Відступ по вертикалі<input
+              id="islandOffsetY"
+              type="number"
+              min="0"
+              max="2000"
+          /></label>
+        </div>
+        <label class="check"
+          ><input id="islandTopmost" type="checkbox" />Поверх інших вікон</label
+        ><label class="check"
+          ><input id="islandHover" type="checkbox" />Розгортати при наведенні,
+          згортати при відведенні</label
+        ><label class="check"
+          ><input id="islandAnimations" type="checkbox" />Плавні переходи</label
+        >
+        <p class="hint">
+          Акрил: сильний блюр, тонування та шум. Скло: прозорий розмитий фон.
+          Без рамки: прозорий фон без блюру. Mica: непрозоре тонування із
+          зерном. «Свій фон» зберігається тільки в програмі.
+        </p>
+        <div class="actions">
+          <button id="previewIsland">Показати острівець</button
+          ><button id="minimizeTray">Згорнути у трей</button>
+        </div>
+        <p id="islandStatus" role="status"></p>
+            </section>
+      <section data-settings-page="account" hidden>
+        <div class="settings-card">
+          <h3>Акаунти</h3>
+          <div class="actions"><button class="primary" id="webviewYouTube">Увійти в YouTube Music</button><button class="primary" id="webviewSpotify">Увійти в Spotify</button></div>
+          <p id="authState" role="status"></p><p id="spotifyState" role="status"></p>
+          <p id="webviewYouTubeStatus" role="status"></p><p id="webviewSpotifyStatus" role="status"></p>
+        </div>
+        <div class="settings-card">
+          <h3>Уподобане</h3>
+          <button id="syncLikes">Синхронізувати уподобане</button>
+          <p id="likesSyncState" role="status"></p>
+        </div>
+        <div class="settings-card">
+          <h3>Розширення</h3>
+          <div class="actions"><button id="extensionSetup">Налаштувати розширення</button><button id="retryPair">Синхронізувати з розширенням</button><button id="pasteSession">Вставити сесію</button></div>
+          <p id="pairState" role="status"></p>
+        </div>
+      </section>
+      <section data-settings-page="advanced" hidden>
+        <h3>Кешування для офлайн прослуховування</h3>
+        <label class="check"
+          ><input id="cacheEnabled" type="checkbox" /> Автоматично зберігати
+          прослухані треки</label
+        >
+        <label
+          >Папка аудіокешу<input id="cacheDir" placeholder="D:\MusicCache"
+        /></label>
+        <div class="actions">
+          <button id="chooseCacheDir">Обрати папку…</button
+          >
+        </div>
+        <label class="check"
+          ><input id="offlineOnly" type="checkbox" /> Слухати лише офлайн — без
+          мережевих запитів до YouTube</label
+        >
+
+        <p class="hint">
+          Оригінальний формат WebM / M4A / Opus / MP3 зберігається без
+          перекодування. ✓ біля треку означає, що перевірений аудіофайл є на ПК.
+          Вимкнення автоматичного кешування не видаляє вже збережені файли.
+          Зміна папки застосовується до нових завантажень.
+        </p>
+        <p class="hint">
+          Буферизується лише один наступний трек, після повного завантаження
+          поточного. Якщо автоматичний кеш вимкнено, тимчасові буфери
+          видаляються після завершення програми.
+        </p>
+      
+
+        <div class="settings-card" id="recoveryPanel">
+          <h3>Видалені та проблемні пісні</h3>
+          <div class="actions">
+            <button type="button" id="recoveryTrash" class="active">Кошик</button>
+            <button type="button" id="recoveryIssues">Не знайдені / недоступні</button>
+            <button type="button" id="recoveryRefresh">Оновити</button>
+            <button type="button" id="emptyTrash">Очистити кошик</button>
+          </div>
+          <p class="hint">Кошик зберігає пісні після видалення з бібліотеки. Проблемні пісні містять помилки імпорту й пошуку аудіо; їх можна перевірити повторно.</p>
+          <p id="recoveryStatus" role="status"></p>
+          <div id="recoveryList" class="recovery-list"></div>
+        </div>
+        <h3>Компоненти</h3>
+        <div id="diagnostics" class="component-list" role="status"></div>
+        <div class="actions">
+          <button id="installTools" class="primary">Встановити відсутні</button>
+          <button id="checkTools">Перевірити</button>
+        </div>
+        <p id="componentState" role="status"></p>
+      </section>
+    </dialog>
+    <dialog id="sessionDialog" class="wizard">
+      <form method="dialog">
+        <div class="dialoghead">
+          <h2>Вставити сесію з розширення</h2>
+          <button aria-label="Закрити">✕</button>
+        </div>
+      </form>
+      <p>
+        Скопіюй сесію в розширенні та встав її сюди.
+      </p>
+      <label
+        >Пакет сесії<textarea
+          id="sessionText"
+          rows="6"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="SAYMUSIC_SESSION_V1…"
+        ></textarea>
+      </label>
+      <p class="hint">
+        Це дані входу в YouTube. Поле очищається після імпорту або закриття
+        вікна; не публікуй його в скриншотах.
+      </p>
+      <button id="importSession" class="primary">Підключити</button>
+      <p id="sessionImportState" role="status"></p>
+    </dialog>
+    <dialog id="extensionWizard" class="wizard">
+      <form method="dialog">
+        <div class="dialoghead">
+          <h2>Підключити розширення</h2>
+          <button aria-label="Закрити">✕</button>
+        </div>
+      </form>
+      <label>Браузер<select id="browser"><option value="edge">Microsoft Edge</option><option value="chrome">Google Chrome</option><option value="brave">Brave</option></select></label>
+      <div class="settings-card">
+        <h3>1. Додатковий міст для автозапуску</h3>
+        <p>
+          Якщо ти вже вставив сесію, цей крок можна пропустити. За потреби
+          кнопка зареєструє Say Music для поточного користувача Windows у
+          Chrome, Edge та Brave. Права адміністратора не потрібні. Якщо
+          перемістиш папку програми — натисни кнопку повторно.
+        </p>
+        <button id="installBridge" class="primary">Встановити зв’язок</button
+        ><button id="removeBridge">Відключити зв’язок</button>
+        <p id="bridgeRegistration" role="status"></p>
+      </div>
+      <div class="settings-card">
+        <h3>2. Завантаж розширення у браузер</h3>
+        <ol>
+          <li>Натисни «Відкрити розширення браузера».</li>
+          <li>Увімкни Developer mode / Режим розробника.</li>
+          <li>Натисни Load unpacked / Завантажити розпаковане.</li>
+          <li>
+            У вікні вибору папки встав шлях нижче в адресний рядок і підтвердь
+            вибір папки <strong>extension</strong>.
+          </li>
+          <li>
+            Якщо Say Music уже встановлено з цієї папки, натисни ↻ на його
+            картці. Підтвердь доступ до YouTube, якщо браузер запитає.
+          </li>
+        </ol>
+        <label>Папка розширення<input id="extensionPath" readonly /></label>
+        <div class="actions">
+          <button id="copyExtensionPath">Копіювати шлях</button
+          ><button id="showExtensionFolder">Відкрити папку</button
+          ><button id="openExtensions" class="primary">
+            Відкрити розширення браузера
+          </button>
+        </div>
+        <p class="hint">
+          Якщо розширення було завантажено з іншої старої папки, видали ту копію
+          та завантаж цю. Не встановлюй дві копії одночасно.
+        </p>
+      </div>
+      <div class="settings-card">
+        <h3>3. Перевір з’єднання</h3>
+        <p>
+          Кнопка відкриє YouTube Music із перевіркою зв’язку. Якщо розширення
+          завантажене й має доступ до сайту, нижче з’явиться підтвердження.
+          Google-акаунт для цієї перевірки не потрібний.
+        </p>
+        <button id="testExtension" class="primary">
+          Відкрити YouTube Music і перевірити
+        </button>
+        <p id="bridgeConnection" role="status"></p>
+        <p class="hint">
+          Якщо зв’язку немає: перевір кроки 1–2, дозволь розширенню працювати на
+          YouTube, онови вкладку. За потреби перезапусти браузер. Say Music має
+          залишатися відкритою.
+        </p>
+      </div>
+      <div class="settings-card">
+        <h3>4. Додавай музику</h3>
+        <p>
+          Біля лайка у рядку пісні буде кнопка ＋. У вікні поширення — «Додати
+          трек/плейлист». Для додавання пісень передавати сесію браузера не
+          потрібно.
+        </p>
+        <p>
+          Для точного списку YouTube Music LM окремо увійди на сайті, відкрий
+          вікно розширення через значок у браузері та натисни «Підключити
+          YouTube-акаунт».
+        </p>
+      </div>
+    </dialog>
+    <dialog id="importDialog">
+      <form method="dialog">
+        <div class="dialoghead">
+          <h2>Імпорт музики</h2>
+          <button>✕</button>
+        </div>
+      </form>
+      <label
+        >Посилання YouTube або Spotify<input
+          id="importURL"
+          placeholder="Посилання на трек, плейлист або альбом" /></label
+      ><label>Зберегти у<select id="importPlaylist"></select></label>
+      <p class="hint">
+        Імпортуються до 10 000 треків за один запит. Імпорт працює у фоні;
+        бібліотекою можна користуватися далі. Приватний список LM потребує
+        підключеної сесії.
+      </p>
+      <button id="doImport" class="primary">Імпортувати</button>
+    </dialog>
+    <dialog id="picker">
+      <form method="dialog">
+        <div class="dialoghead">
+          <h2>Додати у плейлист</h2>
+          <button>✕</button>
+        </div>
+      </form>
+      <select id="pickPlaylist"></select>
+      <div class="actions">
+        <button class="primary" id="confirmPick">Додати</button
+        ><button id="pickNew">＋ Новий</button>
+      </div>
+    </dialog>
+    <dialog id="textDialog">
+      <form id="textForm">
+        <h2 id="textTitle">Назва плейлиста</h2>
+        <input id="textValue" maxlength="100" required />
+        <div class="actions">
+          <button class="primary">Зберегти</button
+          ><button type="button" id="textCancel">Скасувати</button>
+        </div>
+      </form>
+    </dialog>
+    <div id="toast" role="status" hidden></div>
+    <script src="i18n.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

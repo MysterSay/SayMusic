@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Say Music Island</title>
+    <link rel="stylesheet" href="island.css" />
+  </head>
+  <body class="collapsed">
+    <main id="island">
+      <img
+        id="customBackground"
+        src="placeholder.svg"
+        alt=""
+        aria-hidden="true"
+      /><img id="ambient" src="placeholder.svg" alt="" aria-hidden="true" />
+      <header>
+        <button id="restore" title="Відкрити Say Music">♫</button
+        ><span>Say Music</span
+        ><button id="pin" title="Закріпити розгорнутим">◇</button
+        ><button id="hide" title="Приховати острівець">×</button>
+      </header>
+      <div class="content">
+        <div class="artwork">
+          <img id="art" src="placeholder.svg" alt="Обкладинка" /><img
+            id="artPrevious"
+            src="placeholder.svg"
+            alt=""
+            aria-hidden="true"
+          />
+        </div>
+        <section id="info">
+          <strong id="title">Say Music</strong
+          ><span id="artist">Обери пісню у програмі</span
+          ><input
+            id="seek"
+            type="range"
+            min="0"
+            max="1"
+            value="0"
+            aria-label="Позиція відтворення"
+          />
+          <div id="times">
+            <span id="elapsed">0:00</span><span id="duration">0:00</span>
+          </div>
+          <div class="controls">
+            <button id="previous" title="Попередній">Ⅰ◁</button
+            ><button id="toggle" title="Відтворити / пауза">▶</button
+            ><button id="next" title="Наступний">▷Ⅰ</button
+            ><button id="favorite" title="Додати до уподобаних" aria-pressed="false" disabled>♡</button>
+          </div>
+        </section>
+      </div>
+      <p id="error" hidden></p>
+    </main>
+    <script src="i18n.js"></script>
+    <script src="island.js"></script>
+  </body>
+</html>
