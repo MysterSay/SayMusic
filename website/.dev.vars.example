@@ -1,4 +1,0 @@
-# Names only. Set actual values as Cloudflare Secrets, not in source.
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=
