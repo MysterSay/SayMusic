@@ -2,6 +2,7 @@ package player
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,9 @@ import (
 	"strings"
 	"time"
 )
+
+//go:embed Install-Dependencies.ps1
+var dependencyInstaller []byte
 
 const extensionID = "pfapcgdhfglkpbibnidhiagdbpndcein"
 
@@ -164,10 +168,6 @@ func (t *tailOutput) Write(b []byte) (int, error) {
 	return n, nil
 }
 func (a *App) installComponents() error {
-	script := filepath.Join(installRoot(), "Install-Dependencies.ps1")
-	if _, e := os.Stat(script); e != nil {
-		return errors.New("Не знайдено інсталятор компонентів. Розпакуй весь архів")
-	}
 	a.mu.Lock()
 	if j := a.jobs[a.setupJob]; j != nil && j.Status == "running" {
 		a.mu.Unlock()
@@ -180,13 +180,8 @@ func (a *App) installComponents() error {
 	go func() {
 		ctx, cancel := context.WithTimeout(a.life, 15*time.Minute)
 		defer cancel()
-		c := exec.CommandContext(ctx, "powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script)
-		quiet(c)
-		c.Dir = installRoot()
 		var output tailOutput
-		c.Stdout = &output
-		c.Stderr = &output
-		e := c.Run()
+		e := runDependencyInstaller(ctx, installRoot(), &output)
 		a.mu.Lock()
 		defer a.mu.Unlock()
 		j := a.jobs[id]
@@ -199,4 +194,23 @@ func (a *App) installComponents() error {
 		}
 	}()
 	return nil
+}
+
+// Extract only for the installation process; downloaded tools belong beside the EXE.
+func runDependencyInstaller(ctx context.Context, root string, output *tailOutput) error {
+	dir, err := os.MkdirTemp("", "SayMusic-installer-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+	script := filepath.Join(dir, "Install-Dependencies.ps1")
+	if err := os.WriteFile(script, dependencyInstaller, 0600); err != nil {
+		return err
+	}
+	c := exec.CommandContext(ctx, "powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script, "-InstallDirectory", root)
+	quiet(c)
+	c.Dir = root
+	c.Stdout = output
+	c.Stderr = output
+	return c.Run()
 }

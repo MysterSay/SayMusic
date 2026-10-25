@@ -27,6 +27,10 @@ The extension for Microsoft Edge, Google Chrome, and Brave lets you add music fr
 
 > For Spotify tracks, the player finds matching audio on YouTube.
 
+### Playback components
+
+If playback components are missing, open **Settings → Advanced → Components** and click **Install missing**. Say Music downloads yt-dlp, FFmpeg, and Deno to the `tools` folder beside `SayMusic.exe`. An internet connection is required; no separate installer script is needed.
+
 ---
 
 ## Українська
@@ -53,3 +57,7 @@ The extension for Microsoft Edge, Google Chrome, and Brave lets you add music fr
 Розширення для Microsoft Edge, Google Chrome та Brave дозволяє додавати музику з YouTube і Spotify до плеєра та передавати сесії для підключення акаунтів.
 
 > Для треків Spotify плеєр знаходить відповідне аудіо на YouTube.
+
+### Компоненти відтворення
+
+Якщо компонентів немає, відкрий **Налаштування → Додатково → Компоненти** та натисни **Встановити відсутні**. Say Music завантажить yt-dlp, FFmpeg і Deno в папку `tools` поруч із `SayMusic.exe`. Потрібен інтернет; окремий скрипт інсталятора не потрібний.

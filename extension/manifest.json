@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Say Music — YouTube Music & Spotify",
-  "version": "1.5.32",
+  "version": "1.5.33",
   "description": "Додавання пісень і цілих плейлистів YouTube та Spotify до Say Music.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsMxCFQ304IvFq3TKXLGFiRV4+kUZ8Jypk+jprDuRoW0HxBt7c+dPaCvVmQhEz9eAIgc3Z9YBK/PLFzFIpte1g2Sl7Qx1qfWpWEktQFGrlp/3m26G5LbjjzjmvTMZlRlDFZR1Nfi2vcbdXTYVeZNu4jEbvGOLSL35EKCso9384Pdsq8ecllDugI65VGHmfdS9nIXTJRUv1Vl+b5xXalm5R7C+k+zqFcOl4QMq2mv1Qe+8YCRRp7RG8s3+VMq4xasRio2i4BHG5TPNH7jlF5hPXTjmO0ANSOsRMS8hgGH01UX4Fhmu5DieftaY4sm52REGDlaGlSjF0N8o3Xxc6VWAXQIDAQAB",
   "permissions": [
