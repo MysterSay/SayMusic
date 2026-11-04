@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -37,13 +38,13 @@ func (a *App) superviseAudio() {
 			quiet(cmd)
 			if e = a.runAudioWorker(cmd, 4*time.Second); e != nil && a.life.Err() == nil && a.config().Dynamic.Enabled {
 				log.Printf("Audio monitor restarted: %v", e)
-				a.setAudioLevels(AudioLevels{Error: "Моніторинг звуку перезапускається…"})
+				a.setAudioLevels(AudioLevels{Error: "Моніторинг звуку: " + e.Error()})
 				retryAt = time.Now().Add(5 * time.Second)
 			}
 		}
 	}
 }
-func (a *App) runAudioWorker(cmd *exec.Cmd, timeout time.Duration) error {
+func (a *App) runAudioWorker(cmd *exec.Cmd, timeout time.Duration) (result error) {
 	in, e := cmd.StdinPipe()
 	if e != nil {
 		return e
@@ -54,11 +55,25 @@ func (a *App) runAudioWorker(cmd *exec.Cmd, timeout time.Duration) error {
 		return e
 	}
 	defer out.Close()
-	cmd.Stderr = io.Discard
+	diagnostics := &audioWorkerDiagnostics{}
+	cmd.Stderr = diagnostics
 	if e = cmd.Start(); e != nil {
 		return e
 	}
-	defer func() { cmd.Process.Kill(); in.Close(); out.Close(); cmd.Wait() }()
+	defer func() {
+		cmd.Process.Kill()
+		in.Close()
+		out.Close()
+		exitErr := cmd.Wait()
+		if result != nil {
+			if exitErr != nil {
+				result = fmt.Errorf("%w; worker: %v", result, exitErr)
+			}
+			if detail := strings.TrimSpace(string(diagnostics.data)); detail != "" {
+				result = fmt.Errorf("%w; %s", result, detail)
+			}
+		}
+	}()
 	stopped := make(chan struct{})
 	defer close(stopped)
 	// Pipe writes cannot hold the player state lock or UI thread.
@@ -176,6 +191,29 @@ func RunAudioWorker(parent string) int {
 			}
 		}
 	}()
-	monitorAudio(a)
+	runAudioMonitor(a, monitorAudio)
 	return 0
+}
+
+// WebView2 initializes and locks the entry thread as STA during package init.
+// Core Audio needs an MTA thread. Always enter the native monitor from a new
+// goroutine; monitorAudio locks that thread for its complete COM lifetime.
+func runAudioMonitor(a *App, monitor func(*App)) {
+	done := make(chan struct{})
+	go func() { defer close(done); monitor(a) }()
+	<-done
+}
+
+// Bound crash diagnostics; cmd.Wait joins the stderr copy before reading data.
+type audioWorkerDiagnostics struct{ data []byte }
+
+func (b *audioWorkerDiagnostics) Write(p []byte) (int, error) {
+	n := len(p)
+	if remaining := 2048 - len(b.data); remaining > 0 {
+		if len(p) > remaining {
+			p = p[:remaining]
+		}
+		b.data = append(b.data, p...)
+	}
+	return n, nil
 }

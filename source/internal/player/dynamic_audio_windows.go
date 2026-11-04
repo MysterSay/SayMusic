@@ -5,6 +5,7 @@ package player
 import (
 	"fmt"
 	"golang.org/x/sys/windows"
+	"log"
 	"os"
 	"runtime"
 	"syscall"
@@ -169,7 +170,8 @@ func monitorAudio(a *App) {
 	hr, _, _ := audioOle.NewProc("CoInitializeEx").Call(0, 0)
 	if int32(hr) < 0 {
 		a.mu.Lock()
-		a.audioLevels.Error = "Не вдалося ініціалізувати Core Audio"
+		a.audioLevels.Error = fmt.Sprintf("Core Audio CoInitializeEx: 0x%08x", uint32(hr))
+		log.Print(a.audioLevels.Error)
 		a.mu.Unlock()
 		return
 	}
