@@ -125,8 +125,15 @@ func randomID() string {
 	return hex.EncodeToString(b)
 }
 func Run() {
+	startup, startupErr := os.OpenFile(filepath.Join(installRoot(), "startup.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	if startupErr == nil {
+		defer startup.Close()
+		log.SetOutput(startup)
+	}
+	log.Print("Startup 1.5.37: entering player")
 	runtime.LockOSThread()
 	if !initProcessGroup() {
+		log.Print("Startup: another instance already running")
 		return
 	}
 	defer func() {
@@ -140,7 +147,12 @@ func Run() {
 	f, e := os.OpenFile(filepath.Join(dir, "app.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	must(e)
 	defer f.Close()
-	log.SetOutput(f)
+	if startupErr == nil {
+		log.SetOutput(io.MultiWriter(startup, f))
+	} else {
+		log.SetOutput(f)
+	}
+	log.Print("Startup: opening library")
 	db, e := sql.Open("sqlite", filepath.Join(dir, "library.db"))
 	must(e)
 	defer db.Close()
@@ -171,10 +183,15 @@ func Run() {
 		a.cfg.CacheDir = filepath.Dir(a.dir)
 	}
 	a.cfg.CacheDir = filepath.Dir(a.dir)
-	must(a.repairCacheLocations())
-	if _, e := os.Stat(filepath.Join(a.dir, "com.saymusic.desktop.json")); e == nil {
-		must(a.installBrowserBridge())
+	if e := a.repairCacheLocations(); e != nil {
+		log.Printf("Startup: cache organization deferred: %v", e)
 	}
+	if _, e := os.Stat(filepath.Join(a.dir, "com.saymusic.desktop.json")); e == nil {
+		if e := a.installBrowserBridge(); e != nil {
+			log.Printf("Startup: browser registration deferred: %v", e)
+		}
+	}
+	log.Print("Startup: preparing audio monitor")
 	a.startDynamicAudio()
 	a.lastSeen.Store(time.Now().Unix())
 	go func() {
@@ -229,6 +246,7 @@ func Run() {
 		}
 	}()
 	fmt.Println("Say Music:", link)
+	log.Print("Startup: creating player window")
 	if openWindow(link, a.dir, a.quit, a) {
 		return
 	}

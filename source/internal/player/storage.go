@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,8 +40,8 @@ func readLocation() storageLocation {
 	if loc.Root == "" {
 		loc.Root = filepath.Join(installRoot(), "SayMusicData")
 	}
-	rel, _ := filepath.Rel(old, loc.Root)
-	if rel == "." || (!strings.HasPrefix(rel, "..") && !filepath.IsAbs(rel)) {
+	rel, relErr := filepath.Rel(old, loc.Root)
+	if relErr == nil && (rel == "." || (!strings.HasPrefix(rel, "..") && !filepath.IsAbs(rel))) {
 		loc.Root = filepath.Join(installRoot(), "SayMusicData")
 	}
 	loc.Previous = old
@@ -71,6 +72,12 @@ func prepareStorage() (string, error) {
 	if e := writableDir(music); e != nil {
 		return "", e
 	}
+	// Record the destination before moving anything, so an interrupted migration resumes.
+	intent, _ := json.Marshal(loc)
+	if e := atomicWrite(locationFile(), intent); e != nil {
+		return "", e
+	}
+	log.Printf("Startup: storage destination=%s previous=%s", data, loc.Previous)
 	if loc.Previous != "" && !samePath(loc.Previous, data) {
 		if e := moveStorageTree(loc.Previous, data); e != nil {
 			return "", e
@@ -179,8 +186,8 @@ func (a *App) requestStorageChange(root string) error {
 		return fmt.Errorf("Потрібен абсолютний шлях")
 	}
 	// Do not move into a descendant of the current data directory.
-	rel, _ := filepath.Rel(a.dir, root)
-	if rel == "." || (!strings.HasPrefix(rel, "..") && !filepath.IsAbs(rel)) {
+	rel, relErr := filepath.Rel(a.dir, root)
+	if relErr == nil && (rel == "." || (!strings.HasPrefix(rel, "..") && !filepath.IsAbs(rel))) {
 		return fmt.Errorf("Обери папку поза поточним каталогом data")
 	}
 	if e := writableDir(root); e != nil {
@@ -215,7 +222,8 @@ func (a *App) repairCacheLocations() error {
 		dst := filepath.Join(a.musicDir(), filepath.Base(i.path))
 		if !samePath(i.path, dst) {
 			if e = moveStorageTree(i.path, dst); e != nil {
-				return e
+				log.Printf("Cache organization deferred for %s: %v", i.id, e)
+				continue
 			}
 			if _, e = os.Stat(dst); e == nil {
 				if _, e = a.db.Exec("UPDATE cache_files SET path=? WHERE track_id=?", dst, i.id); e != nil {
