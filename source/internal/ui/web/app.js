@@ -1805,7 +1805,7 @@ setInterval(async()=>{if(dynamicPolling)return;dynamicPolling=true;try{
  const status=await api("audio/levels"),cfg=await api("settings");settings.dynamic=cfg.dynamic;
  $("dynamicMicLevel").value=Math.round(Math.max(0,Number(status.input)||0)*1000)/10;
  if(hasExternalAudio(status,settings.dynamic))dynamicLastActivity=Date.now()+250;
- $("dynamicStatus").textContent=status.error||"";
+ $("dynamicStatus").textContent=tr(status.error||"");
  fillAudioDevices("dynamicOutput",status.devices||[],false,settings.dynamic?.output);fillAudioDevices("dynamicInput",status.devices||[],true,settings.dynamic?.input);
 } catch(e){$("dynamicStatus").textContent=e.message;}finally{dynamicPolling=false;}},200);
 

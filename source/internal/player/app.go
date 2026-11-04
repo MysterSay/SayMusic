@@ -66,6 +66,9 @@ type Job struct {
 	Count   int    `json:"count"`
 }
 type App struct {
+	audioSampleSeq   uint64
+	configWriteMu    sync.Mutex
+	audioParentPID   uint32
 	audioWasEnabled  bool
 	audioLevels      AudioLevels
 	spotifyMu        sync.Mutex
@@ -130,7 +133,7 @@ func Run() {
 		defer startup.Close()
 		log.SetOutput(startup)
 	}
-	log.Print("Startup 1.5.38: entering player")
+	log.Print("Startup 1.5.39: entering player")
 	runtime.LockOSThread()
 	if !initProcessGroup() {
 		log.Print("Startup: another instance already running")

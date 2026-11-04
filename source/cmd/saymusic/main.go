@@ -13,6 +13,10 @@ import (
 const extensionID = "pfapcgdhfglkpbibnidhiagdbpndcein"
 
 func main() {
+	if len(os.Args) == 3 && os.Args[1] == "--audio-worker" {
+		os.Exit(player.RunAudioWorker(os.Args[2]))
+	}
+
 	if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "chrome-extension://") {
 		runBridge()
 		return

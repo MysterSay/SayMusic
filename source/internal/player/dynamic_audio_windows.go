@@ -8,6 +8,7 @@ import (
 	"os"
 	"runtime"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -61,8 +62,11 @@ func audioString(p *uint16) string {
 	audioOle.NewProc("CoTaskMemFree").Call(uintptr(unsafe.Pointer(p)))
 	return s
 }
-func descendants() map[uint32]bool {
-	out := map[uint32]bool{uint32(os.Getpid()): true}
+func descendants(parent uint32) map[uint32]bool {
+	if parent == 0 {
+		parent = uint32(os.Getpid())
+	}
+	out := map[uint32]bool{parent: true}
 	snap, e := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
 	if e != nil {
 		return out
@@ -183,6 +187,9 @@ func monitorAudio(a *App) {
 		micID = ""
 	}
 	defer stopMic()
+	names := map[string]string{}
+	var excluded map[uint32]bool
+	var processScan time.Time
 	audioTick(a, func(c DynamicAudioConfig) AudioLevels {
 		if !c.Enabled {
 			stopMic()
@@ -199,7 +206,10 @@ func monitorAudio(a *App) {
 		}
 		defer arelease(enumerator)
 		result := AudioLevels{Devices: []AudioDevice{}}
-		excluded := descendants()
+		if time.Since(processScan) > time.Second {
+			excluded = descendants(a.audioParentPID)
+			processScan = time.Now()
+		}
 		for flow := 0; flow <= 1; flow++ {
 			var list uintptr
 			if acall(enumerator, 3, uintptr(flow), 1, uintptr(unsafe.Pointer(&list))) != nil {
@@ -223,7 +233,12 @@ func monitorAudio(a *App) {
 				var ptr *uint16
 				acall(device, 5, uintptr(unsafe.Pointer(&ptr)))
 				id := audioString(ptr)
-				result.Devices = append(result.Devices, AudioDevice{ID: id, Name: friendlyDevice(device, id), Capture: flow == 1})
+				name := names[id]
+				if name == "" {
+					name = friendlyDevice(device, id)
+					names[id] = name
+				}
+				result.Devices = append(result.Devices, AudioDevice{ID: id, Name: name, Capture: flow == 1})
 				selected := c.Output
 				if flow == 1 {
 					selected = c.Input

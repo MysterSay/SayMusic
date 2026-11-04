@@ -52,7 +52,6 @@ func normalizeDynamic(c DynamicAudioConfig) DynamicAudioConfig {
 	c.Maximum = math.Max(c.Minimum, math.Min(100, c.Maximum))
 	return c
 }
-func (a *App) startDynamicAudio() { go monitorAudio(a) }
 func (a *App) dynamicAPI(w http.ResponseWriter, r *http.Request, path string) bool {
 	if path != "audio/dynamic" && path != "audio/levels" {
 		return false
@@ -103,6 +102,7 @@ func audioTick(a *App, sample func(DynamicAudioConfig) AudioLevels) {
 			levels := sample(c)
 			a.mu.Lock()
 			a.audioLevels = levels
+			a.audioSampleSeq++
 			a.mu.Unlock()
 		}
 	}

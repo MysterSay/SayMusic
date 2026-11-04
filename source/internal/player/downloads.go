@@ -31,9 +31,11 @@ type Download struct {
 
 func (a *App) config() Config { a.mu.Lock(); defer a.mu.Unlock(); return a.cfg }
 func (a *App) mutateConfig(fn func(*Config)) error {
+	a.configWriteMu.Lock()
+	defer a.configWriteMu.Unlock()
 	a.mu.Lock()
-	defer a.mu.Unlock()
 	c := a.cfg
+	a.mu.Unlock()
 	fn(&c)
 	b, e := json.MarshalIndent(c, "", "  ")
 	if e != nil {
@@ -42,7 +44,9 @@ func (a *App) mutateConfig(fn func(*Config)) error {
 	if e = atomicWrite(filepath.Join(a.dir, "settings.json"), b); e != nil {
 		return e
 	}
+	a.mu.Lock()
 	a.cfg = c
+	a.mu.Unlock()
 	return nil
 }
 func (a *App) updateConfig(c Config) error {

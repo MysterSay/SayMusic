@@ -527,5 +527,6 @@
   "Типовий мікрофон": "Default microphone",
   "Дані буде перенесено після закриття. Запусти плеєр знову.": "Data will be moved after shutdown. Start the player again.",
   "Поріг спрацювання мікрофона, %": "Microphone activation threshold, %",
-  "Рівень мікрофона зараз, %": "Current microphone level, %"
+  "Рівень мікрофона зараз, %": "Current microphone level, %",
+  "Моніторинг звуку перезапускається…": "Audio monitoring is restarting…"
 }
