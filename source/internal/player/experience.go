@@ -286,26 +286,31 @@ func (a *App) experienceAPI(w http.ResponseWriter, r *http.Request, path string)
 		reply(a.config())
 	case "experience/settings":
 		var b struct {
-			Island          IslandConfig `json:"island"`
-			Recommendations bool         `json:"recommendations"`
-			EarlyBuffering  *bool        `json:"earlyBuffering"`
-			PrefetchSeconds *int         `json:"prefetchSeconds"`
+			Island          *IslandConfig `json:"island"`
+			Recommendations bool          `json:"recommendations"`
+			EarlyBuffering  *bool         `json:"earlyBuffering"`
+			PrefetchSeconds *int          `json:"prefetchSeconds"`
 		}
 		if json.NewDecoder(r.Body).Decode(&b) != nil {
 			fail("Некоректні налаштування")
 			break
 		}
-		b.Island = normalizeIsland(b.Island)
+		if b.Island != nil {
+			normalized := normalizeIsland(*b.Island)
+			b.Island = &normalized
+		}
 		if e := a.mutateConfig(func(c *Config) {
 			// The native drag owns the anchor. A settings dialog opened before
 			// dragging must not overwrite the new position with stale fields.
-			anchor := c.Island
-			next := b.Island
-			next.EdgeSide = anchor.EdgeSide
-			next.EdgeOffset = anchor.EdgeOffset
-			next.EdgeMonitorX = anchor.EdgeMonitorX
-			next.EdgeMonitorY = anchor.EdgeMonitorY
-			c.Island = normalizeIsland(next)
+			if b.Island != nil {
+				anchor := c.Island
+				next := *b.Island
+				next.EdgeSide = anchor.EdgeSide
+				next.EdgeOffset = anchor.EdgeOffset
+				next.EdgeMonitorX = anchor.EdgeMonitorX
+				next.EdgeMonitorY = anchor.EdgeMonitorY
+				c.Island = normalizeIsland(next)
+			}
 			c.Recommendations = b.Recommendations
 			if b.EarlyBuffering != nil {
 				c.EarlyBuffering = b.EarlyBuffering
@@ -320,7 +325,7 @@ func (a *App) experienceAPI(w http.ResponseWriter, r *http.Request, path string)
 		a.mu.Lock()
 		desktop := a.desktop
 		a.mu.Unlock()
-		if desktop != nil {
+		if desktop != nil && b.Island != nil {
 			desktop("apply")
 		}
 		reply(a.config())

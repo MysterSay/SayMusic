@@ -29,6 +29,7 @@ let library = [],
   radioSeed = "",
   radioBusy = false;
 let baseVolume = 0.7;
+let settingsEditVersion=0;
 let settings = {},
   plannedNext = "",
   prefetched = "",
@@ -43,11 +44,16 @@ let artistList = [],
 const url = (p) =>
   p + (p.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(token);
 async function api(path, data) {
-  const r = await fetch(url("/api/" + path), {
+  const shortRequest = path==="settings" || path==="audio/dynamic" || path==="pair/status" || path.startsWith("setup/status");
+  const controller = shortRequest ? new AbortController() : null;
+  const timeout = controller ? setTimeout(()=>controller.abort(),5000) : null;
+  let r;
+  try { r = await fetch(url("/api/" + path), {
     method: data === undefined ? "GET" : "POST",
     headers: data === undefined ? {} : { "Content-Type": "application/json" },
     body: data === undefined ? undefined : JSON.stringify(data),
-  });
+    ...(controller ? {signal:controller.signal} : {}),
+  }); } finally { if(timeout) clearTimeout(timeout); }
   let v;
   try {
     v = await r.json();
@@ -758,8 +764,10 @@ function saveState() {
   }, 350);
 }
 async function authState() {
-  settings = await api("settings");
-  loadExperienceSettings();
+  const version=settingsEditVersion;
+  const fresh=await api("settings");
+  if(version!==settingsEditVersion){settings={...fresh,dynamic:settings.dynamic};return;}
+  settings=fresh;
   $("browser").value = ["chrome", "edge", "brave"].includes(settings.browser)
     ? settings.browser
     : "edge";
@@ -948,10 +956,13 @@ audio.onwaiting = () => {
   $("nowArtist").textContent = tr("Буферизація…");
 };
 audio.onplaying = () => { updateNow(); schedulePrefetch().catch(() => {}); };
+$("settings").addEventListener("input",()=>{settingsEditVersion++;});
+$("settings").addEventListener("change",()=>{settingsEditVersion++;});
 $("settingsBtn").onclick = safely(async () => {
-  await authState();
+  loadExperienceSettings();
   settingsGroup("main");
-  $("settings").showModal();
+  if(!$("settings").open) $("settings").showModal();
+  await authState();
 });
 $("saveCache").onclick = safely(async () => {
   const saved = await api("settings", {
@@ -1085,7 +1096,9 @@ safely(async () => {
 
 setInterval(() => api("heartbeat").catch(() => {}), 15000);
 
+let activeSettingsPage="main";
 function settingsGroup(key) {
+ activeSettingsPage=key;
  document.querySelectorAll("[data-save-page]").forEach(b=>b.hidden=b.dataset.savePage!==key);
   if (key === "advanced") loadRecovery().catch(e=>toast(e.message));
   document
@@ -1175,14 +1188,17 @@ async function saveExperience() {
     recommendations: $("recommendationsEnabled").checked,
     earlyBuffering: $("earlyBuffering").checked,
   });
-  await saveDynamicSettings();
   loadExperienceSettings();
   $("islandStatus").textContent = tr("Налаштування збережено");
   toast(tr("Налаштування збережено"));
 }
 $("islandEdgeStandard").onchange=()=>{$("islandEdgeColor").disabled=$("islandEdgeStandard").checked;};
-$("saveIsland").onclick = $("saveRecommendations").onclick =
-  safely(saveExperience);
+$("saveIsland").onclick = safely(saveExperience);
+$("saveRecommendations").onclick = safely(async()=>{
+  settings=await api("experience/settings",{recommendations:$("recommendationsEnabled").checked,earlyBuffering:$("earlyBuffering").checked});
+  await dynamicSaveQueue;
+  toast(tr("Налаштування збережено"));
+});
 $("previewIsland").onclick = safely(async () => {
   await saveExperience();
   await api("desktop/action", { action: "island" });
@@ -1580,7 +1596,7 @@ $("retryPair").onclick = safely(async () => {
 });
 
 setInterval(async () => {
-  if (setupPolling || (!$("settings").open && !$("extensionWizard").open))
+  if (setupPolling || (!$("extensionWizard").open && (!$("settings").open || activeSettingsPage!=="advanced")))
     return;
   setupPolling = true;
   try {
@@ -1784,26 +1800,56 @@ function loadDynamicSettings(){
  for(const [id,value] of [["dynamicOutput",c.output],["dynamicInput",c.input]]){if(value&&!Array.from($(id).options).some(o=>o.value===value))$(id).add(new Option(value,value));$(id).value=value||"";}
  $("dynamicEnabled").checked=!!c.enabled;$("dynamicOptions").hidden=!c.enabled;$("dynamicDelay").value=c.delay??2;$("dynamicMinimum").value=c.minimum??20;$("dynamicMic").checked=!!c.microphone;$("dynamicMicField").hidden=!c.microphone;$("dynamicMicThresholdField").hidden=!c.microphone;$("dynamicMicLevelField").hidden=!c.microphone;$("dynamicMicThreshold").value=c.microphoneThreshold??5;
 }
-async function saveDynamicSettings(){
- const c=await api("audio/dynamic",{enabled:$("dynamicEnabled").checked,delay:Number($("dynamicDelay").value),minimum:Number($("dynamicMinimum").value),maximum:100,output:$("dynamicOutput").value,microphone:$("dynamicMic").checked,microphoneThreshold:Number($("dynamicMicThreshold").value),input:$("dynamicInput").value});settings.dynamic=c;loadDynamicSettings();
+let dynamicSaveQueue=Promise.resolve(),dynamicSaveVersion=0;
+function updateDynamicVisibility(){
+ const enabled=$("dynamicEnabled").checked,mic=$("dynamicMic").checked;
+ $("dynamicOptions").hidden=!enabled;
+ for(const id of ["dynamicMicField","dynamicMicThresholdField","dynamicMicLevelField"])$(id).hidden=!mic;
+}
+function saveDynamicSettings(){
+ updateDynamicVisibility();
+ const snapshot={enabled:$("dynamicEnabled").checked,delay:Number($("dynamicDelay").value),minimum:Number($("dynamicMinimum").value),maximum:100,output:$("dynamicOutput").value,microphone:$("dynamicMic").checked,microphoneThreshold:Number($("dynamicMicThreshold").value),input:$("dynamicInput").value};
+ settings.dynamic=snapshot;
+ const version=++dynamicSaveVersion;
+ dynamicSaveQueue=dynamicSaveQueue.catch(()=>{}).then(async()=>{
+  const saved=await api("audio/dynamic",snapshot);
+  if(version===dynamicSaveVersion) settings.dynamic=saved;
+ });
+ return dynamicSaveQueue;
 }
 $("dynamicEnabled").onchange=safely(saveDynamicSettings);$("dynamicMic").onchange=safely(saveDynamicSettings);
 for(const id of ["dynamicDelay","dynamicMinimum","dynamicOutput","dynamicInput","dynamicMicThreshold"])$(id).onchange=safely(saveDynamicSettings);
-function fillAudioDevices(id,devices,capture,selected){const select=$(id),list=devices.filter(d=>d.capture===capture),signature=JSON.stringify(list);if(select.dataset.signature!==signature){select.replaceChildren(new Option(tr(capture?"Типовий мікрофон":"Типовий вихід"),""),...list.map(d=>new Option(d.name,d.id)));select.dataset.signature=signature;}select.value=selected||"";}
+function fillAudioDevices(id,devices,capture,selected){
+ const select=$(id);
+ // Updating a focused native select closes or resets its popup in WebView2.
+ if(document.activeElement===select||!devices.length)return;
+ const list=devices.filter(d=>d.capture===capture),signature=JSON.stringify(list);
+ if(select.dataset.signature!==signature){
+  select.replaceChildren(new Option(tr(capture?"Типовий мікрофон":"Типовий вихід"),""),...list.map(d=>new Option(d.name,d.id)));
+  if(selected&&!list.some(d=>d.id===selected))select.add(new Option(selected,selected));
+  select.dataset.signature=signature;
+ }
+ if(select.value!==(selected||""))select.value=selected||"";
+}
+let lastDynamicDisplay=0;
+
 function dynamicFrame(now){
  const c=settings.dynamic||{};
  let target=baseVolume;
  if(c.enabled&&Date.now()-dynamicLastActivity<(Number(c.delay)||0)*1000)target=Math.min(baseVolume,(Number(c.minimum)||0)/100);
  if(target!==dynamicTarget){dynamicFadeFrom=audio.volume;dynamicTarget=target;dynamicFadeStart=now;}
  const progress=Math.min(1,(now-dynamicFadeStart)/1000);audio.volume=Math.max(0,Math.min(1,dynamicFadeFrom+(dynamicTarget-dynamicFadeFrom)*progress));
- $("dynamicMaximum").value=Math.round(baseVolume*100);$("dynamicCurrent").value=Math.round(audio.volume*100);
+ if($("settings").open&&activeSettingsPage==="main"&&now-lastDynamicDisplay>=250){
+  lastDynamicDisplay=now;
+  for(const [id,value] of [["dynamicMaximum",Math.round(baseVolume*100)],["dynamicCurrent",Math.round(audio.volume*100)]])if($(id).value!==String(value))$(id).value=value;
+ }
 }
 // Keep the volume envelope active when the player window is hidden.
 setInterval(()=>dynamicFrame(performance.now()),50);
 setInterval(async()=>{if(dynamicPolling)return;dynamicPolling=true;try{
  if(!settings.dynamic?.enabled)return;
- const status=await api("audio/levels"),cfg=await api("settings");settings.dynamic=cfg.dynamic;
- $("dynamicMicLevel").value=Math.round(Math.max(0,Number(status.input)||0)*1000)/10;
+ const status=await api("audio/levels");
+ if($("settings").open&&activeSettingsPage==="main")$("dynamicMicLevel").value=Math.round(Math.max(0,Number(status.input)||0)*1000)/10;
  if(hasExternalAudio(status,settings.dynamic))dynamicLastActivity=Date.now()+250;
  $("dynamicStatus").textContent=tr(status.error||"");
  fillAudioDevices("dynamicOutput",status.devices||[],false,settings.dynamic?.output);fillAudioDevices("dynamicInput",status.devices||[],true,settings.dynamic?.input);
