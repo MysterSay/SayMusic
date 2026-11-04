@@ -25,6 +25,11 @@ spotify.dat
 storage-path.txt
 /AccountWebView/
 
-# Published Windows build
-!/build/*.exe
-!/build/tools/*.exe
+
+# Local player storage
+storage-path.json
+/SayMusicData/
+/data/
+/music/
+/tools/
+/build/

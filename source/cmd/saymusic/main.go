@@ -17,6 +17,9 @@ func main() {
 		runBridge()
 		return
 	}
+	if len(os.Args) > 1 {
+		os.Exit(player.RunCLI(os.Args[1:]))
+	}
 	player.Run()
 }
 func runBridge() {
@@ -26,18 +29,14 @@ func runBridge() {
 			return
 		}
 	}
-	dir, e := os.UserConfigDir()
-	if e != nil {
-		_ = nativehost.WriteMessage(os.Stdout, map[string]any{"ok": false, "error": "Недоступна папка налаштувань"})
-		return
-	}
+	dir := player.DataDirectory()
 	exe, _ := os.Executable()
 	name := "SayMusic"
 	if runtime.GOOS == "windows" {
 		name += ".exe"
 	}
 	app := filepath.Join(filepath.Dir(exe), name)
-	_ = nativehost.Run(os.Stdin, os.Stdout, filepath.Join(dir, "SayMusic"), func() error {
+	_ = nativehost.Run(os.Stdin, os.Stdout, dir, func() error {
 		cmd := exec.Command(app)
 		if e := cmd.Start(); e != nil {
 			return e

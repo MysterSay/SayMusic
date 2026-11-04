@@ -141,6 +141,17 @@
 <label>Мова / Language<select id="language"><option value="uk">Українська</option><option value="en">English</option></select></label><h3>Відтворення</h3>
         <label class="check"><input id="earlyBuffering" type="checkbox" checked />Рання буферизація</label>
         <p class="hint">Завантажувати наступний трек одразу після початку відтворення поточного.</p>
+        <label class="check"><input id="dynamicEnabled" type="checkbox">Динамічна гучність</label>
+        <div id="dynamicOptions" hidden>
+          <label>Затримка відновлення, секунд<input id="dynamicDelay" type="number" min="0" max="120" step="0.1"></label>
+          <label>Мінімальна гучність, %<input id="dynamicMinimum" type="number" min="0" max="100"></label>
+          <label>Максимальна гучність, %<input id="dynamicMaximum" type="number" readonly></label>
+          <label>Зараз, %<input id="dynamicCurrent" type="number" readonly></label>
+          <label>Потік звуку<select id="dynamicOutput"><option value="">Типовий вихід</option></select></label>
+          <label class="check"><input id="dynamicMic" type="checkbox">Мікрофон</label>
+          <label id="dynamicMicField" hidden>Мікрофон<select id="dynamicInput"><option value="">Типовий мікрофон</option></select></label>
+          <p id="dynamicStatus" role="status"></p>
+        </div>
         <h3>Рекомендації</h3>
         <label class="check"
           ><input id="recommendationsEnabled" type="checkbox" />Нові й старі

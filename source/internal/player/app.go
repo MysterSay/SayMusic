@@ -43,20 +43,21 @@ type Track struct {
 	Cached        bool    `json:"cached"`
 }
 type Config struct {
-	Language         string       `json:"language"`
-	InterfaceTheme   string       `json:"interfaceTheme"`
-	InterfaceAccent  string       `json:"interfaceAccent"`
-	SpotifyConnected bool         `json:"spotifyConnected"`
-	InterfaceColor   string       `json:"interfaceColor"`
-	Island           IslandConfig `json:"island"`
-	Recommendations  bool         `json:"recommendations"`
-	Browser          string       `json:"browser"`
-	Cookies          bool         `json:"cookies"`
-	CacheEnabled     bool         `json:"cacheEnabled"`
-	CacheDir         string       `json:"cacheDir"`
-	OfflineOnly      bool         `json:"offlineOnly"`
-	EarlyBuffering   *bool        `json:"earlyBuffering"`
-	PrefetchSeconds  int          `json:"prefetchSeconds"`
+	Dynamic          DynamicAudioConfig `json:"dynamic"`
+	Language         string             `json:"language"`
+	InterfaceTheme   string             `json:"interfaceTheme"`
+	InterfaceAccent  string             `json:"interfaceAccent"`
+	SpotifyConnected bool               `json:"spotifyConnected"`
+	InterfaceColor   string             `json:"interfaceColor"`
+	Island           IslandConfig       `json:"island"`
+	Recommendations  bool               `json:"recommendations"`
+	Browser          string             `json:"browser"`
+	Cookies          bool               `json:"cookies"`
+	CacheEnabled     bool               `json:"cacheEnabled"`
+	CacheDir         string             `json:"cacheDir"`
+	OfflineOnly      bool               `json:"offlineOnly"`
+	EarlyBuffering   *bool              `json:"earlyBuffering"`
+	PrefetchSeconds  int                `json:"prefetchSeconds"`
 }
 type Job struct {
 	ID      string `json:"id"`
@@ -65,6 +66,8 @@ type Job struct {
 	Count   int    `json:"count"`
 }
 type App struct {
+	audioWasEnabled  bool
+	audioLevels      AudioLevels
 	spotifyMu        sync.Mutex
 	spotifyRunMu     sync.Mutex
 	spotifyEpoch     uint64
@@ -132,16 +135,8 @@ func Run() {
 			showFatal(fmt.Sprint(e))
 		}
 	}()
-	dir, e := os.UserConfigDir()
+	dir, e := prepareStorage()
 	must(e)
-	baseDir := dir
-	dir = filepath.Join(baseDir, "SayMusic")
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if _, err = os.Stat(filepath.Join(baseDir, "AuroraMusic", "library.db")); err == nil {
-			must(os.Rename(filepath.Join(baseDir, "AuroraMusic"), dir))
-		}
-	}
-	must(os.MkdirAll(dir, 0700))
 	f, e := os.OpenFile(filepath.Join(dir, "app.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	must(e)
 	defer f.Close()
@@ -161,14 +156,26 @@ func Run() {
 	defer a.cleanupDownloads()
 	b, _ := os.ReadFile(filepath.Join(dir, "settings.json"))
 	_ = json.Unmarshal(b, &a.cfg)
+	var fields map[string]json.RawMessage
+	_ = json.Unmarshal(b, &fields)
+	if len(fields["dynamic"]) == 0 {
+		a.cfg.Dynamic = DynamicAudioConfig{Delay: 2, Minimum: 20, Maximum: 100}
+	}
+	a.cfg.Dynamic = normalizeDynamic(a.cfg.Dynamic)
 	a.cfg.Language = normalizeLanguage(a.cfg.Language)
 	a.cfg.Island = normalizeIsland(a.cfg.Island)
 	if a.cfg.PrefetchSeconds == 0 {
 		a.cfg.PrefetchSeconds = 45
 	}
 	if a.cfg.CacheDir == "" {
-		a.cfg.CacheDir = filepath.Join(a.dir, "AudioCache")
+		a.cfg.CacheDir = filepath.Dir(a.dir)
 	}
+	a.cfg.CacheDir = filepath.Dir(a.dir)
+	must(a.repairCacheLocations())
+	if _, e := os.Stat(filepath.Join(a.dir, "com.saymusic.desktop.json")); e == nil {
+		must(a.installBrowserBridge())
+	}
+	a.startDynamicAudio()
 	a.lastSeen.Store(time.Now().Unix())
 	go func() {
 		ticker := time.NewTicker(30 * time.Second)
@@ -298,7 +305,7 @@ func tool(name string) string {
 		suffix = ".exe"
 	}
 	exe, _ := os.Executable()
-	for _, p := range []string{filepath.Join(filepath.Dir(exe), "tools", name+suffix), filepath.Join(filepath.Dir(exe), name+suffix)} {
+	for _, p := range []string{filepath.Join(readLocation().Root, "tools", name+suffix), filepath.Join(filepath.Dir(exe), "tools", name+suffix), filepath.Join(filepath.Dir(exe), name+suffix)} {
 		if s, e := os.Stat(p); e == nil && !s.IsDir() {
 			return p
 		}
@@ -422,7 +429,7 @@ func (a *App) api(w http.ResponseWriter, r *http.Request) {
 	reply := func(v any) { _ = json.NewEncoder(w).Encode(v) }
 	a.lastSeen.Store(time.Now().Unix())
 	path := strings.TrimPrefix(r.URL.Path, "/api/")
-	if a.embeddedAuthAPI(w, r, path) || a.recoveryAPI(w, r, path) || a.spotifyAPI(w, r, path) || a.experienceAPI(w, r, path) || a.pairAPI(w, r, path) || a.setupAPI(w, r, path) {
+	if a.dynamicAPI(w, r, path) || a.scriptAPI(w, r, path) || a.embeddedAuthAPI(w, r, path) || a.recoveryAPI(w, r, path) || a.spotifyAPI(w, r, path) || a.experienceAPI(w, r, path) || a.pairAPI(w, r, path) || a.setupAPI(w, r, path) {
 		return
 	}
 	if a.integrationAPI(w, r) {
@@ -757,7 +764,7 @@ func (a *App) api(w http.ResponseWriter, r *http.Request) {
 			c.EarlyBuffering = body.EarlyBuffering
 			c.PrefetchSeconds = body.PrefetchSeconds
 			if c.CacheDir == "" {
-				c.CacheDir = filepath.Join(a.dir, "AudioCache")
+				c.CacheDir = filepath.Dir(a.dir)
 			}
 			if !filepath.IsAbs(c.CacheDir) {
 				fail(errors.New("Потрібен абсолютний шлях до папки кешу"))
@@ -771,6 +778,21 @@ func (a *App) api(w http.ResponseWriter, r *http.Request) {
 					fail(e)
 					return
 				}
+			}
+			if !samePath(c.CacheDir, filepath.Dir(a.dir)) {
+				// Persist ordinary settings in the old location; migration occurs after shutdown.
+				next := c.CacheDir
+				c.CacheDir = filepath.Dir(a.dir)
+				if e := a.updateConfig(c); e != nil {
+					fail(e)
+					return
+				}
+				if e := a.requestStorageChange(next); e != nil {
+					fail(e)
+					return
+				}
+				reply(map[string]any{"restartRequired": true})
+				return
 			}
 			if e := a.updateConfig(c); e != nil {
 				fail(e)

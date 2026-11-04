@@ -515,5 +515,15 @@
   "Завантажити міст": "Download bridge",
   "Для зв’язку розширення з плеєром.": "Connects the browser extension to the player.",
   "Завантаження мосту…": "Downloading bridge…",
-  "Міст завантажено": "Bridge downloaded"
+  "Міст завантажено": "Bridge downloaded",
+  "Динамічна гучність": "Dynamic volume",
+  "Затримка відновлення, секунд": "Restore delay, seconds",
+  "Мінімальна гучність, %": "Minimum volume, %",
+  "Максимальна гучність, %": "Maximum volume, %",
+  "Зараз, %": "Current volume, %",
+  "Потік звуку": "Audio output",
+  "Мікрофон": "Microphone",
+  "Типовий вихід": "Default output",
+  "Типовий мікрофон": "Default microphone",
+  "Дані буде перенесено після закриття. Запусти плеєр знову.": "Data will be moved after shutdown. Start the player again."
 }

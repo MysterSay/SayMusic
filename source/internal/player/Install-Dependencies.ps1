@@ -18,7 +18,7 @@ function Has-WebViewRuntime {
     }
     return $false
 }
-$workDir = Join-Path ([IO.Path]::GetTempPath()) ('SayMusic-' + [Guid]::NewGuid().ToString('N'))
+$workDir = Join-Path $toolsDir ('.install-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory $workDir | Out-Null
 try {
     if (-not (Has-WebViewRuntime)) {

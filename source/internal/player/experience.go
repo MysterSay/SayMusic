@@ -390,7 +390,7 @@ func (a *App) experienceAPI(w http.ResponseWriter, r *http.Request, path string)
 		reply(out)
 	case "player/command":
 		var c PlayerCommand
-		if json.NewDecoder(r.Body).Decode(&c) != nil || !oneOf(c.Action, "toggle", "next", "previous", "seek", "volume") {
+		if json.NewDecoder(r.Body).Decode(&c) != nil || !oneOf(c.Action, "toggle", "play", "pause", "stop", "next", "previous", "seek", "volume", "repeat") {
 			fail("Некоректна команда")
 			break
 		}

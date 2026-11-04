@@ -28,6 +28,7 @@ let library = [],
   saveTimer,
   radioSeed = "",
   radioBusy = false;
+let baseVolume = 0.7;
 let settings = {},
   plannedNext = "",
   prefetched = "",
@@ -748,7 +749,7 @@ function saveState() {
         ids: queue.map((t) => t.id),
         index,
         position: offset + (audio.currentTime || 0),
-        volume: audio.volume,
+        volume: baseVolume,
         repeat,
         shuffle,
         radioSeed,
@@ -903,25 +904,24 @@ $("radioNow").onclick = safely(() => {
   if (queue[index]) return radio(queue[index]);
 });
 $("volume").oninput = () => {
-  audio.volume = Number($("volume").value);
+  setPlayerVolume(Number($("volume").value));
   saveState();
 };
+let seekDragging=false;
+$("seek").addEventListener("pointerdown",()=>{seekDragging=true;});
+$("seek").addEventListener("input",()=>{seekDragging=true;$("elapsed").textContent=time(Number($("seek").value));});
+$("seek").addEventListener("pointercancel",()=>{seekDragging=false;});
 $("seek").onchange = safely(async () => {
+  seekDragging=false;
   if (index >= 0) {
     const target = Number($("seek").value);
-    if (
-      audio.seekable.length &&
-      target <= audio.seekable.end(audio.seekable.length - 1)
-    ) {
-      audio.currentTime = target;
-      offset = 0;
-      saveState();
-    } else await playIndex(index, target);
+    await seekTo(target);
   }
 });
 audio.ontimeupdate = () => {
   if(audio.currentTime>=5)failedPlaybackIDs.clear();
   const t = queue[index];
+  if(seekDragging)return;
   $("elapsed").textContent = time(offset + audio.currentTime);
   $("seek").max = t?.duration || 0;
   $("seek").value = offset + audio.currentTime;
@@ -954,12 +954,14 @@ $("settingsBtn").onclick = safely(async () => {
   $("settings").showModal();
 });
 $("saveCache").onclick = safely(async () => {
-  settings = await api("settings", {
+  const saved = await api("settings", {
     cacheEnabled: $("cacheEnabled").checked,
     cacheDir: $("cacheDir").value,
     offlineOnly: $("offlineOnly").checked,
     earlyBuffering: $("earlyBuffering").checked,
   });
+  if(saved.restartRequired){toast(tr("Дані буде перенесено після закриття. Запусти плеєр знову."));return;}
+  settings=saved;
   plannedNext = "";
   prefetched = "";
   await api("cache/prefetch", { id: "" });
@@ -1012,7 +1014,7 @@ $("exit").onclick = safely(async () => {
       duration:
         queue[index]?.duration ||
         (Number.isFinite(audio.duration) ? audio.duration : 0),
-      volume: audio.volume,
+      volume: baseVolume,
       repeat,
       shuffle,
       radioSeed,
@@ -1057,9 +1059,8 @@ safely(async () => {
     .filter(Boolean);
   index = Number.isInteger(s.index) ? Math.min(s.index, queue.length - 1) : -1;
   offset = s.position || 0;
-  audio.volume =
-    typeof s.volume === "number" ? Math.min(1, Math.max(0, s.volume)) : 0.7;
-  $("volume").value = audio.volume;
+  setPlayerVolume(typeof s.volume === "number" ? Math.min(1, Math.max(0, s.volume)) : 0.7);
+  $("volume").value = baseVolume;
   repeat = s.repeat || "off";
   shuffle = !!s.shuffle;
   radioSeed = s.radioSeed || "";
@@ -1100,6 +1101,7 @@ document
 settingsGroup("main");
 let islandBackgroundImage = "";
 function loadExperienceSettings() {
+ loadDynamicSettings();
  $("language").value=settings.language||"uk";
   applyAppearance();
   $("interfaceColor").value = settings.interfaceColor || "#191b23";
@@ -1173,6 +1175,7 @@ async function saveExperience() {
     recommendations: $("recommendationsEnabled").checked,
     earlyBuffering: $("earlyBuffering").checked,
   });
+  await saveDynamicSettings();
   loadExperienceSettings();
   $("islandStatus").textContent = tr("Налаштування збережено");
   toast(tr("Налаштування збережено"));
@@ -1282,7 +1285,7 @@ setInterval(async () => {
       duration:
         queue[index]?.duration ||
         (Number.isFinite(audio.duration) ? audio.duration : 0),
-      volume: audio.volume,
+      volume: baseVolume,
       after: commandAfter,
     });
     for (const c of commands) {
@@ -1297,20 +1300,15 @@ setInterval(async () => {
         case "previous":
           await playIndex(Math.max(0, index - 1));
           break;
-        case "seek":
-          if (index >= 0) {
-            if (
-              audio.seekable.length &&
-              c.value <= audio.seekable.end(audio.seekable.length - 1)
-            ) {
-              audio.currentTime = c.value;
-              offset = 0;
-            } else await playIndex(index, c.value);
-          }
-          break;
+        case "dynamic": settings.dynamic=(await api("settings")).dynamic;loadDynamicSettings();break;
+        case "play": if(audio.paused) await resumePlayback(); break;
+        case "pause": audio.pause(); break;
+        case "stop": ++playGeneration;audio.onerror=null;audio.onloadedmetadata=null;audio.pause();audio.removeAttribute("src");audio.load();offset=0;$("seek").value=0;$("elapsed").textContent=time(0);saveState();updateNow();break;
+        case "repeat": repeat=["off","all","one"][Math.round(c.value)]||"off";$("repeat").classList.toggle("active",repeat!=="off");$("repeat").textContent=repeat==="one"?"↻¹":"↻";saveState();break;
+        case "seek": await seekTo(c.value); break;
         case "volume":
-          audio.volume = Math.min(1, Math.max(0, c.value));
-          $("volume").value = audio.volume;
+          setPlayerVolume(c.value);
+          $("volume").value = baseVolume;
           break;
       }
     }
@@ -1770,3 +1768,42 @@ for (const [provider,button,label] of [["youtube","webviewYouTube","webviewYouTu
   },1500);
  });
 }
+
+async function seekTo(value,keepPlaying=!audio.paused){
+ if(index<0)return;
+ const duration=queue[index]?.duration||0;
+ const target=Math.max(0,Math.min(Number(value)||0,duration||Number(value)||0));
+ if(audio.src.includes("/media?")&&audio.readyState>=1){audio.currentTime=target;offset=0;saveState();return;}
+ await playIndex(index,target || 0.001);
+ if(!keepPlaying)audio.pause();
+}
+let dynamicFadeFrom=0.7,dynamicTarget=0.7,dynamicFadeStart=0,dynamicLastActivity=0,dynamicPolling=false;
+function setPlayerVolume(value){baseVolume=Math.min(1,Math.max(0,Number(value)||0));$("volume").value=baseVolume;if(!settings.dynamic?.enabled){audio.volume=baseVolume;dynamicTarget=baseVolume;}saveState();}
+function loadDynamicSettings(){
+ const c=settings.dynamic||{};
+ for(const [id,value] of [["dynamicOutput",c.output],["dynamicInput",c.input]]){if(value&&!Array.from($(id).options).some(o=>o.value===value))$(id).add(new Option(value,value));$(id).value=value||"";}
+ $("dynamicEnabled").checked=!!c.enabled;$("dynamicOptions").hidden=!c.enabled;$("dynamicDelay").value=c.delay??2;$("dynamicMinimum").value=c.minimum??20;$("dynamicMic").checked=!!c.microphone;$("dynamicMicField").hidden=!c.microphone;
+}
+async function saveDynamicSettings(){
+ const c=await api("audio/dynamic",{enabled:$("dynamicEnabled").checked,delay:Number($("dynamicDelay").value),minimum:Number($("dynamicMinimum").value),maximum:100,output:$("dynamicOutput").value,microphone:$("dynamicMic").checked,input:$("dynamicInput").value});settings.dynamic=c;loadDynamicSettings();
+}
+$("dynamicEnabled").onchange=safely(saveDynamicSettings);$("dynamicMic").onchange=safely(saveDynamicSettings);
+for(const id of ["dynamicDelay","dynamicMinimum","dynamicOutput","dynamicInput"])$(id).onchange=safely(saveDynamicSettings);
+function fillAudioDevices(id,devices,capture,selected){const select=$(id),list=devices.filter(d=>d.capture===capture),signature=JSON.stringify(list);if(select.dataset.signature!==signature){select.replaceChildren(new Option(tr(capture?"Типовий мікрофон":"Типовий вихід"),""),...list.map(d=>new Option(d.name,d.id)));select.dataset.signature=signature;}select.value=selected||"";}
+function dynamicFrame(now){
+ const c=settings.dynamic||{};
+ let target=baseVolume;
+ if(c.enabled&&Date.now()-dynamicLastActivity<(Number(c.delay)||0)*1000)target=Math.min(baseVolume,(Number(c.minimum)||0)/100);
+ if(target!==dynamicTarget){dynamicFadeFrom=audio.volume;dynamicTarget=target;dynamicFadeStart=now;}
+ const progress=Math.min(1,(now-dynamicFadeStart)/1000);audio.volume=Math.max(0,Math.min(1,dynamicFadeFrom+(dynamicTarget-dynamicFadeFrom)*progress));
+ $("dynamicMaximum").value=Math.round(baseVolume*100);$("dynamicCurrent").value=Math.round(audio.volume*100);
+ requestAnimationFrame(dynamicFrame);
+}
+requestAnimationFrame(dynamicFrame);
+setInterval(async()=>{if(dynamicPolling)return;dynamicPolling=true;try{
+ if(!settings.dynamic?.enabled)return;
+ const status=await api("audio/levels"),cfg=await api("settings");settings.dynamic=cfg.dynamic;
+ if(status.output>0.005||(settings.dynamic?.microphone&&status.input>0.005))dynamicLastActivity=Date.now()+250;
+ $("dynamicStatus").textContent=status.error||"";
+ fillAudioDevices("dynamicOutput",status.devices||[],false,settings.dynamic?.output);fillAudioDevices("dynamicInput",status.devices||[],true,settings.dynamic?.input);
+} catch(e){$("dynamicStatus").textContent=e.message;}finally{dynamicPolling=false;}},200);

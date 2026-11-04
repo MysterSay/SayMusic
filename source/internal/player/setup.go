@@ -181,7 +181,7 @@ func (a *App) installComponents() error {
 		ctx, cancel := context.WithTimeout(a.life, 15*time.Minute)
 		defer cancel()
 		var output tailOutput
-		e := runDependencyInstaller(ctx, installRoot(), &output)
+		e := runDependencyInstaller(ctx, a.config().CacheDir, &output)
 		a.mu.Lock()
 		defer a.mu.Unlock()
 		j := a.jobs[id]
@@ -198,7 +198,11 @@ func (a *App) installComponents() error {
 
 // Extract only for the installation process; downloaded tools belong beside the EXE.
 func runDependencyInstaller(ctx context.Context, root string, output *tailOutput) error {
-	dir, err := os.MkdirTemp("", "SayMusic-installer-")
+	tempRoot := filepath.Join(DataDirectory(), "temp")
+	if err := os.MkdirAll(tempRoot, 0700); err != nil {
+		return err
+	}
+	dir, err := os.MkdirTemp(tempRoot, "installer-")
 	if err != nil {
 		return err
 	}

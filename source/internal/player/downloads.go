@@ -206,7 +206,7 @@ func (a *App) startDownload(id string, manual bool) (*Download, error) {
 	}
 	root := a.temporaryDir
 	if c.CacheEnabled || manual {
-		root = c.CacheDir
+		root = a.musicDir()
 		if root == "" {
 			root = filepath.Join(a.dir, "AudioCache")
 		}
@@ -214,7 +214,7 @@ func (a *App) startDownload(id string, manual bool) (*Download, error) {
 	if e := os.MkdirAll(root, 0700); e != nil {
 		return nil, e
 	}
-	dir, e := os.MkdirTemp(root, ".say-pending-"+id+"-")
+	dir, e := os.MkdirTemp(a.temporaryDir, ".say-pending-"+id+"-")
 	if e != nil {
 		return nil, e
 	}
@@ -285,7 +285,7 @@ func (a *App) download(ctx context.Context, d *Download, root string, persistent
 	a.mu.Unlock()
 	if persistent {
 		if root == a.temporaryDir {
-			root = a.config().CacheDir
+			root = a.musicDir()
 			if root == "" {
 				root = filepath.Join(a.dir, "AudioCache")
 			}
@@ -790,8 +790,7 @@ func (a *App) ensurePersistent(d *Download) error {
 	if _, _, ok := a.cachedPath(d.ID); ok {
 		return nil
 	}
-	c := a.config()
-	root := c.CacheDir
+	root := a.musicDir()
 	if root == "" {
 		root = filepath.Join(a.dir, "AudioCache")
 	}

@@ -20,6 +20,9 @@ A Windows music player that brings together your YouTube Music and Spotify libra
 - Customize themes, interface colors, and widget appearance.
 - Restore deleted tracks from the trash and retry unavailable songs.
 - Switch between English and Ukrainian interfaces.
+- Automatically lower player volume when other apps or an optional microphone produce sound.
+- Keep the database, settings, sessions, and music together in the selected cache folder.
+- Control playback and playlists from scripts using EXE arguments; see [API.md](API.md).
 
 ### Browser extension
 
@@ -55,6 +58,9 @@ If playback components are missing, open **Settings → Advanced → Components*
 - Налаштування теми, кольорів інтерфейсу та вигляду віджетів.
 - Відновлення видалених треків із кошика й повторна перевірка недоступних пісень.
 - Український та англійський інтерфейс.
+- Автоматичне приглушення плеєра під час звуку інших програм або вибраного мікрофона.
+- База, налаштування, сесії та музика у вибраній папці аудіокешу.
+- Керування відтворенням і плейлистами через аргументи EXE — [API.md](API.md).
 
 ### Розширення браузера
 
