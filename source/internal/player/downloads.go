@@ -210,7 +210,8 @@ func (a *App) startDownload(id string, manual bool) (*Download, error) {
 	}
 	root := a.temporaryDir
 	if c.CacheEnabled || manual {
-		root = a.musicDir()
+		// Use the snapshot: musicDir() calls config() and would lock a.mu again.
+		root = filepath.Join(c.CacheDir, "music")
 		if root == "" {
 			root = filepath.Join(a.dir, "AudioCache")
 		}
