@@ -1797,9 +1797,9 @@ function dynamicFrame(now){
  if(target!==dynamicTarget){dynamicFadeFrom=audio.volume;dynamicTarget=target;dynamicFadeStart=now;}
  const progress=Math.min(1,(now-dynamicFadeStart)/1000);audio.volume=Math.max(0,Math.min(1,dynamicFadeFrom+(dynamicTarget-dynamicFadeFrom)*progress));
  $("dynamicMaximum").value=Math.round(baseVolume*100);$("dynamicCurrent").value=Math.round(audio.volume*100);
- requestAnimationFrame(dynamicFrame);
 }
-requestAnimationFrame(dynamicFrame);
+// Keep the volume envelope active when the player window is hidden.
+setInterval(()=>dynamicFrame(performance.now()),50);
 setInterval(async()=>{if(dynamicPolling)return;dynamicPolling=true;try{
  if(!settings.dynamic?.enabled)return;
  const status=await api("audio/levels"),cfg=await api("settings");settings.dynamic=cfg.dynamic;
