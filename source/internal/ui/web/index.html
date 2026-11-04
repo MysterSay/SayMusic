@@ -150,6 +150,8 @@
           <label>Потік звуку<select id="dynamicOutput"><option value="">Типовий вихід</option></select></label>
           <label class="check"><input id="dynamicMic" type="checkbox">Мікрофон</label>
           <label id="dynamicMicField" hidden>Мікрофон<select id="dynamicInput"><option value="">Типовий мікрофон</option></select></label>
+          <label id="dynamicMicThresholdField" hidden>Поріг спрацювання мікрофона, %<input id="dynamicMicThreshold" type="number" min="0" max="100" step="0.1" value="5"></label>
+          <label id="dynamicMicLevelField" hidden>Рівень мікрофона зараз, %<input id="dynamicMicLevel" type="number" readonly></label>
           <p id="dynamicStatus" role="status"></p>
         </div>
         <h3>Рекомендації</h3>

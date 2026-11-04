@@ -8,13 +8,14 @@ import (
 )
 
 type DynamicAudioConfig struct {
-	Enabled    bool    `json:"enabled"`
-	Delay      float64 `json:"delay"`
-	Minimum    float64 `json:"minimum"`
-	Maximum    float64 `json:"maximum"`
-	Output     string  `json:"output"`
-	Microphone bool    `json:"microphone"`
-	Input      string  `json:"input"`
+	MicrophoneThreshold *float64 `json:"microphoneThreshold"`
+	Enabled             bool     `json:"enabled"`
+	Delay               float64  `json:"delay"`
+	Minimum             float64  `json:"minimum"`
+	Maximum             float64  `json:"maximum"`
+	Output              string   `json:"output"`
+	Microphone          bool     `json:"microphone"`
+	Input               string   `json:"input"`
 }
 type AudioDevice struct {
 	ID      string `json:"id"`
@@ -29,6 +30,15 @@ type AudioLevels struct {
 }
 
 func normalizeDynamic(c DynamicAudioConfig) DynamicAudioConfig {
+	threshold := 5.0
+	if c.MicrophoneThreshold != nil {
+		threshold = *c.MicrophoneThreshold
+	}
+	if math.IsNaN(threshold) || math.IsInf(threshold, 0) {
+		threshold = 5
+	}
+	threshold = math.Max(0, math.Min(100, threshold))
+	c.MicrophoneThreshold = &threshold
 	if c.Maximum == 0 {
 		c.Maximum = 100
 	}

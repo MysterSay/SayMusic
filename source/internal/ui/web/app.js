@@ -1782,13 +1782,13 @@ function setPlayerVolume(value){baseVolume=Math.min(1,Math.max(0,Number(value)||
 function loadDynamicSettings(){
  const c=settings.dynamic||{};
  for(const [id,value] of [["dynamicOutput",c.output],["dynamicInput",c.input]]){if(value&&!Array.from($(id).options).some(o=>o.value===value))$(id).add(new Option(value,value));$(id).value=value||"";}
- $("dynamicEnabled").checked=!!c.enabled;$("dynamicOptions").hidden=!c.enabled;$("dynamicDelay").value=c.delay??2;$("dynamicMinimum").value=c.minimum??20;$("dynamicMic").checked=!!c.microphone;$("dynamicMicField").hidden=!c.microphone;
+ $("dynamicEnabled").checked=!!c.enabled;$("dynamicOptions").hidden=!c.enabled;$("dynamicDelay").value=c.delay??2;$("dynamicMinimum").value=c.minimum??20;$("dynamicMic").checked=!!c.microphone;$("dynamicMicField").hidden=!c.microphone;$("dynamicMicThresholdField").hidden=!c.microphone;$("dynamicMicLevelField").hidden=!c.microphone;$("dynamicMicThreshold").value=c.microphoneThreshold??5;
 }
 async function saveDynamicSettings(){
- const c=await api("audio/dynamic",{enabled:$("dynamicEnabled").checked,delay:Number($("dynamicDelay").value),minimum:Number($("dynamicMinimum").value),maximum:100,output:$("dynamicOutput").value,microphone:$("dynamicMic").checked,input:$("dynamicInput").value});settings.dynamic=c;loadDynamicSettings();
+ const c=await api("audio/dynamic",{enabled:$("dynamicEnabled").checked,delay:Number($("dynamicDelay").value),minimum:Number($("dynamicMinimum").value),maximum:100,output:$("dynamicOutput").value,microphone:$("dynamicMic").checked,microphoneThreshold:Number($("dynamicMicThreshold").value),input:$("dynamicInput").value});settings.dynamic=c;loadDynamicSettings();
 }
 $("dynamicEnabled").onchange=safely(saveDynamicSettings);$("dynamicMic").onchange=safely(saveDynamicSettings);
-for(const id of ["dynamicDelay","dynamicMinimum","dynamicOutput","dynamicInput"])$(id).onchange=safely(saveDynamicSettings);
+for(const id of ["dynamicDelay","dynamicMinimum","dynamicOutput","dynamicInput","dynamicMicThreshold"])$(id).onchange=safely(saveDynamicSettings);
 function fillAudioDevices(id,devices,capture,selected){const select=$(id),list=devices.filter(d=>d.capture===capture),signature=JSON.stringify(list);if(select.dataset.signature!==signature){select.replaceChildren(new Option(tr(capture?"Типовий мікрофон":"Типовий вихід"),""),...list.map(d=>new Option(d.name,d.id)));select.dataset.signature=signature;}select.value=selected||"";}
 function dynamicFrame(now){
  const c=settings.dynamic||{};
@@ -1803,7 +1803,13 @@ setInterval(()=>dynamicFrame(performance.now()),50);
 setInterval(async()=>{if(dynamicPolling)return;dynamicPolling=true;try{
  if(!settings.dynamic?.enabled)return;
  const status=await api("audio/levels"),cfg=await api("settings");settings.dynamic=cfg.dynamic;
- if(status.output>0.005||(settings.dynamic?.microphone&&status.input>0.005))dynamicLastActivity=Date.now()+250;
+ $("dynamicMicLevel").value=Math.round(Math.max(0,Number(status.input)||0)*1000)/10;
+ if(hasExternalAudio(status,settings.dynamic))dynamicLastActivity=Date.now()+250;
  $("dynamicStatus").textContent=status.error||"";
  fillAudioDevices("dynamicOutput",status.devices||[],false,settings.dynamic?.output);fillAudioDevices("dynamicInput",status.devices||[],true,settings.dynamic?.input);
 } catch(e){$("dynamicStatus").textContent=e.message;}finally{dynamicPolling=false;}},200);
+
+function hasExternalAudio(levels,config){
+ const threshold=Math.max(0,Math.min(100,Number(config?.microphoneThreshold??5)))/100;
+ return Number(levels.output)>0.005 || (!!config?.microphone && Number(levels.input)>threshold);
+}

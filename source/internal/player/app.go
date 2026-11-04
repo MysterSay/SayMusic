@@ -130,7 +130,7 @@ func Run() {
 		defer startup.Close()
 		log.SetOutput(startup)
 	}
-	log.Print("Startup 1.5.37: entering player")
+	log.Print("Startup 1.5.38: entering player")
 	runtime.LockOSThread()
 	if !initProcessGroup() {
 		log.Print("Startup: another instance already running")

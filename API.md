@@ -34,7 +34,7 @@ On upgrade, the player migrates legacy AppData storage and reorganizes cached tr
 
 ### Dynamic volume
 
-Enable it in Settings → Main. Select the output device to monitor; optionally enable microphone monitoring and choose an input. The player ignores its own process and WebView2 child processes. It monitors audio peak levels locally and does not save recordings. Volume fades to the minimum over one second; after the restore delay it fades back over one second. The maximum follows your regular volume slider; Current shows the actual volume. Windows microphone access may be required. When disabled, audio monitoring stops.
+Enable it in Settings → Main. Select the output device to monitor; optionally enable microphone monitoring and choose an input. The player ignores its own process and WebView2 child processes. It monitors audio peak levels locally and does not save recordings. Volume fades to the minimum over one second; after the restore delay it fades back over one second. The maximum follows your regular volume slider; Current shows the actual volume. The microphone activation threshold is adjustable from 0 to 100% (default: 5%). A live microphone level helps you set it above background noise. Windows microphone access may be required. When disabled, audio monitoring stops.
 
 Seeking a track that is still downloading may wait for the full file before the requested position is available.
 
@@ -46,6 +46,6 @@ Seeking a track that is still downloading may wait for the full file before the 
 
 Після оновлення старі дані AppData переносяться автоматично. При зміні папки плеєр закриється; запусти його знову для перенесення. Якщо є конфлікт файлів, оригінали зберігаються та показується помилка. Папка EXE має бути доступною для запису файла зі шляхом.
 
-Динамічна гучність вмикається в «Налаштування → Головна». Вибери вихідний потік і, за потреби, мікрофон. Власний звук плеєра та його процесів WebView2 ігнорується. Аналізуються локальні рівні звуку, аудіозаписи не зберігаються. Приглушення триває секунду; після заданої затримки відновлення також триває секунду. Максимум відповідає звичайному повзунку, поле «Зараз» показує фактичну гучність. При вимкненій функції моніторинг припиняється. Для мікрофона може знадобитися дозвіл Windows.
+Динамічна гучність вмикається в «Налаштування → Головна». Вибери вихідний потік і, за потреби, мікрофон. Власний звук плеєра та його процесів WebView2 ігнорується. Аналізуються локальні рівні звуку, аудіозаписи не зберігаються. Приглушення триває секунду; після заданої затримки відновлення також триває секунду. Максимум відповідає звичайному повзунку, поле «Зараз» показує фактичну гучність. При вимкненій функції моніторинг припиняється. Поріг спрацювання мікрофона регулюється від 0 до 100% (типово 5%). Поточний рівень мікрофона показано поруч, щоб виставити поріг вище фонового шуму. Для мікрофона може знадобитися дозвіл Windows.
 
 Перемотування треку, який ще завантажується, може чекати на отримання повного файла.
